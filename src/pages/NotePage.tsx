@@ -47,7 +47,7 @@ export function NotePage() {
       <div className="max-w-[65ch]">
         <h1 className="font-serif text-display font-medium">Nota no encontrada</h1>
         <p className="mt-4 text-sepia">Puede que haya sido eliminada del vault.</p>
-        <Link to="/" className="mt-6 inline-block text-laton hover:underline">
+        <Link to="/" className="mt-6 inline-block text-musgo hover:underline">
           Volver al vault
         </Link>
       </div>
@@ -120,7 +120,7 @@ function NoteView({ note }: { note: Note }) {
               autoComplete="off"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 w-full rounded-xs border border-trazo bg-nogal px-3 py-1.5 font-serif text-title font-medium"
+              className="mt-1 w-full rounded-xs border border-trazo bg-noche px-3 py-1.5 font-serif text-title font-medium"
             />
           </div>
         </header>
@@ -134,7 +134,7 @@ function NoteView({ note }: { note: Note }) {
           placeholder="Contenido en Markdown…"
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="mt-6 w-full rounded-xs border border-trazo bg-nogal px-3 py-2 font-serif text-reading placeholder:font-sans placeholder:text-sm placeholder:text-sepia"
+          className="mt-6 w-full rounded-xs border border-trazo bg-noche px-3 py-2 font-serif text-reading placeholder:font-sans placeholder:text-sm placeholder:text-sepia"
         />
         <div className="mt-4 flex gap-2">
           <Button type="submit" variant="primary" disabled={saving}>
@@ -167,7 +167,7 @@ function NoteView({ note }: { note: Note }) {
       </header>
 
       {mode === 'confirm-delete' && (
-        <div className="mt-6 rounded-xs border border-trazo bg-cuero p-4">
+        <div className="mt-6 rounded-xs border border-trazo bg-pizarra p-4">
           <p className="font-medium">¿Eliminar «{note.title}»?</p>
           <p className="mt-1 text-sm text-sepia">
             Se perderán también todas sus conexiones con otras notas. Esta acción no

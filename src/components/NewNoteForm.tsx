@@ -53,7 +53,7 @@ export function NewNoteForm({ category }: { category: Category }) {
         placeholder="Título…"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="w-full max-w-md rounded-xs border border-trazo bg-nogal px-3 py-1.5 font-serif placeholder:font-sans placeholder:text-sm placeholder:text-sepia"
+        className="w-full max-w-md rounded-xs border border-trazo bg-noche px-3 py-1.5 font-serif placeholder:font-sans placeholder:text-sm placeholder:text-sepia"
       />
       <Button type="submit" variant="primary" disabled={saving}>
         Crear

@@ -3,11 +3,11 @@ import type { ButtonHTMLAttributes } from 'react'
 type Variant = 'primary' | 'ghost'
 
 /*
- * Latón se reserva para la acción principal de cada contexto (variant
+ * Musgo se reserva para la acción principal de cada contexto (variant
  * "primary"); el resto de las acciones usan "ghost" sobre trazo.
  */
 const VARIANT_CLASSES: Record<Variant, string> = {
-  primary: 'bg-laton text-nogal hover:bg-laton/85',
+  primary: 'bg-musgo text-noche hover:bg-musgo/85',
   ghost: 'border border-trazo text-sepia hover:text-pergamino',
 }
 

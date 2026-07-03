@@ -22,15 +22,17 @@ archivos mandan. Las tareas del plan se ejecutan una por una, en orden.
 - **Tests:** Vitest (obligatorios para la capa de persistencia)
 - **CI:** GitHub Actions, un solo workflow: lint + build en cada push. No agregar más pasos.
 
-## Dirección visual — "El estudio del cronista"
+## Dirección visual — "Tinta y musgo"
 
 Tokens definidos en `src/index.css` (`@theme`, Tailwind v4 — no hay
 `tailwind.config.js`). Tema oscuro único por decisión de diseño.
 
-- **Materiales:** `nogal` (fondo), `cuero` (superficies), `trazo` (bordes),
-  `pergamino` (texto), `sepia` (texto secundario), `laton` (acento).
-- **Latón es el único acento** y se reserva para lo accionable (enlaces,
+- **Materiales:** `noche` (fondo, negro azulado), `pizarra` (superficies),
+  `trazo` (bordes), `pergamino` (texto), `sepia` (texto secundario).
+- **Musgo es el acento primario** y se reserva para lo accionable (enlaces,
   foco, acciones primarias). Nunca decora ni marca categoría.
+- **Dorado es el acento secundario**, de uso puntual: el marcador de
+  capítulos (`tinta-capitulo` comparte su valor) y detalles de jerarquía.
 - **Tintas de categoría** (`tinta-personaje`, `tinta-locacion`, `tinta-lore`,
   `tinta-capitulo`): codifican categoría en nav, encabezados y conexiones.
   Nunca marcan acción.

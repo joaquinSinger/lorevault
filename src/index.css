@@ -8,26 +8,28 @@
 @import 'tailwindcss';
 
 /*
- * Dirección visual "El estudio del cronista" (tarea 2 de plan.md).
+ * Dirección visual "Tinta y musgo" (tarea 2 de plan.md, paleta revisada).
  * Tema oscuro único por decisión de diseño, no un dark mode derivado.
- * Latón es el único acento y se reserva para lo accionable (enlaces,
- * foco, acciones primarias); las tintas codifican categoría y nunca
- * marcan acción.
+ * Musgo es el acento primario y se reserva para lo accionable (enlaces,
+ * foco, acciones primarias); dorado es el acento secundario, puntual,
+ * para el marcador de capítulos y detalles de jerarquía. Las demás
+ * tintas codifican categoría y nunca marcan acción.
  */
 @theme {
   /* Materiales */
-  --color-nogal: #1a1510; /* fondo */
-  --color-cuero: #261f16; /* superficies elevadas */
-  --color-trazo: #3b3325; /* bordes y reglas */
-  --color-pergamino: #e6dac4; /* texto principal */
-  --color-sepia: #9a8b72; /* texto secundario */
-  --color-laton: #c29343; /* acento accionable */
+  --color-noche: #161b22; /* fondo: negro azulado, tinta nocturna */
+  --color-pizarra: #1e242d; /* superficies elevadas */
+  --color-trazo: #2f3742; /* bordes y reglas */
+  --color-pergamino: #e8e1cf; /* texto principal: pergamino envejecido */
+  --color-sepia: #a09c8b; /* texto secundario */
+  --color-musgo: #6b8f71; /* acento primario accionable */
+  --color-dorado: #b9975b; /* acento secundario: capítulos y jerarquía */
 
-  /* Tintas de categoría (Category) */
-  --color-tinta-personaje: #b56a5c; /* retinto */
-  --color-tinta-locacion: #7e9b6d; /* verdín */
-  --color-tinta-lore: #8e7baa; /* amatista */
-  --color-tinta-capitulo: #6e93b4; /* azul de escriba */
+  /* Tintas de categoría (Category), desaturadas para el fondo frío */
+  --color-tinta-personaje: #b0776d; /* retinto */
+  --color-tinta-locacion: #8ca07b; /* verdín */
+  --color-tinta-lore: #8d81a6; /* amatista */
+  --color-tinta-capitulo: #b9975b; /* = dorado: el marcador de capítulos usa el acento secundario */
 
   /* Tipografía: serif para el contenido del vault, sans para el chrome */
   --font-serif: 'Alegreya Variable', 'Iowan Old Style', Georgia, serif;
@@ -51,15 +53,15 @@
   }
 
   body {
-    @apply bg-nogal font-sans text-pergamino antialiased;
+    @apply bg-noche font-sans text-pergamino antialiased;
   }
 
   ::selection {
-    background-color: --alpha(var(--color-laton) / 30%);
+    background-color: --alpha(var(--color-musgo) / 30%);
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-laton);
+    outline: 2px solid var(--color-musgo);
     outline-offset: 2px;
   }
 }

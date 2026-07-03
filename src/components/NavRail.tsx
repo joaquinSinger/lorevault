@@ -6,7 +6,7 @@ import { SearchBox } from './SearchBox'
 
 export function NavRail() {
   return (
-    <aside className="flex flex-col gap-8 border-r border-trazo bg-cuero px-5 py-8">
+    <aside className="flex flex-col gap-8 border-r border-trazo bg-pizarra px-5 py-8">
       <Link to="/" className="font-serif text-2xl font-medium">
         LoreVault
       </Link>
@@ -23,7 +23,7 @@ export function NavRail() {
                 className={({ isActive }) =>
                   `flex items-center gap-3 rounded-xs px-2 py-1.5 ${
                     isActive
-                      ? 'bg-nogal text-pergamino'
+                      ? 'bg-noche text-pergamino'
                       : 'text-sepia hover:text-pergamino'
                   }`
                 }

@@ -36,7 +36,7 @@ export function SearchBox() {
         autoComplete="off"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="w-full rounded-xs border border-trazo bg-nogal px-3 py-1.5 text-sm placeholder:text-sepia"
+        className="w-full rounded-xs border border-trazo bg-noche px-3 py-1.5 text-sm placeholder:text-sepia"
       />
       {query.trim() &&
         (results.length > 0 ? (
@@ -46,7 +46,7 @@ export function SearchBox() {
                 <Link
                   to={`/nota/${note.id}`}
                   onClick={() => setQuery('')}
-                  className="flex items-center gap-2 rounded-xs px-2 py-1 hover:bg-nogal"
+                  className="flex items-center gap-2 rounded-xs px-2 py-1 hover:bg-noche"
                 >
                   <Cinta category={note.category} />
                   <span className="min-w-0">

@@ -76,7 +76,7 @@ function CategoryView({ category }: { category: Category }) {
                   to={`/nota/${note.id}`}
                   className="group flex items-baseline justify-between gap-4 py-3"
                 >
-                  <span className="min-w-0 truncate font-serif text-xl group-hover:text-laton">
+                  <span className="min-w-0 truncate font-serif text-xl group-hover:text-musgo">
                     {note.title}
                   </span>
                   <span className="shrink-0 text-sm text-sepia">
