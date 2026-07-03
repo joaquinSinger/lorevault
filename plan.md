@@ -22,17 +22,17 @@ en orden. No saltar tareas: cada una asume que la anterior está cerrada.
 
 ## 1. Capa de persistencia (`lib/storage/`)
 
-- [ ] Definir tipos de dominio en `src/types/`: `Note`, `Connection`, `Category`
-- [ ] Implementar wrapper de IndexedDB: apertura de DB, creación de
+- [x] Definir tipos de dominio en `src/types/`: `Note`, `Connection`, `Category`
+- [x] Implementar wrapper de IndexedDB: apertura de DB, creación de
       stores `notes` y `connections` con sus índices (según spec.md §2)
-- [ ] Funciones CRUD de `notes`: create, getById, getByCategory, update, delete
-- [ ] Función de `delete` de nota dispara borrado en cascada de
+- [x] Funciones CRUD de `notes`: create, getById, getByCategory, update, delete
+- [x] Función de `delete` de nota dispara borrado en cascada de
       `connections` asociadas (transacción única)
-- [ ] Funciones de `connections`: create, getByNoteId (bidireccional), delete
-- [ ] Función de búsqueda por título (filtro in-memory sobre índice `title`)
-- [ ] Funciones de export (`exportVault`) e import (`importVault`,
+- [x] Funciones de `connections`: create, getByNoteId (bidireccional), delete
+- [x] Función de búsqueda por título (filtro in-memory sobre índice `title`)
+- [x] Funciones de export (`exportVault`) e import (`importVault`,
       reemplazo total con confirmación)
-- [ ] **Tests con Vitest** para toda esta capa: CRUD, cascada de borrado,
+- [x] **Tests con Vitest** para toda esta capa: CRUD, cascada de borrado,
       round-trip export→import sin pérdida de datos
 
 ---
