@@ -65,10 +65,10 @@ llega en las tareas 4 (listado) y 5 (editor).
 
 ## 4. CRUD de notas (UI)
 
-- [ ] Listado de notas por categoría
-- [ ] Formulario de creación (categoría fija según sección, título requerido)
-- [ ] Vista/edición de nota individual
-- [ ] Confirmación de borrado (mencionando que se pierden las conexiones)
+- [x] Listado de notas por categoría
+- [x] Formulario de creación (categoría fija según sección, título requerido)
+- [x] Vista/edición de nota individual
+- [x] Confirmación de borrado (mencionando que se pierden las conexiones)
 
 ---
 
