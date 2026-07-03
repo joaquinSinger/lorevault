@@ -8,13 +8,13 @@ en orden. No saltar tareas: cada una asume que la anterior está cerrada.
 
 ## 0. Setup del repo
 
-- [ ] Crear repo `lorevault` en GitHub (repo propio, fuera del monorepo pausado)
-- [ ] Inicializar proyecto Vite + React + TypeScript
-- [ ] Instalar y configurar Tailwind CSS
-- [ ] Instalar `idb` (wrapper de IndexedDB) y `uuid`
-- [ ] Configurar ESLint + Prettier (básico, sin reglas exóticas)
-- [ ] Workflow de GitHub Actions: lint + build en cada push
-- [ ] Generar `CLAUDE.md` en la raíz con: stack, estructura de carpetas,
+- [x] Crear repo `lorevault` en GitHub (repo propio, fuera del monorepo pausado)
+- [x] Inicializar proyecto Vite + React + TypeScript
+- [x] Instalar y configurar Tailwind CSS
+- [x] Instalar `idb` (wrapper de IndexedDB) y `uuid`
+- [x] Configurar ESLint + Prettier (básico, sin reglas exóticas)
+- [x] Workflow de GitHub Actions: lint + build en cada push
+- [x] Generar `CLAUDE.md` en la raíz con: stack, estructura de carpetas,
       convenciones de `spec.md` (UUID, borrado en cascada, capa de
       persistencia aislada)
 
