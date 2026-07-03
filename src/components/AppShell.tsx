@@ -4,7 +4,7 @@ import { NavRail } from './NavRail'
 /**
  * Layout "códice abierto": rail de navegación a la izquierda (categorías +
  * buscador) y columna de contenido a la derecha. La marginalia de conexiones
- * se agrega dentro de la vista de nota (tarea 6).
+ * vive dentro de la vista de nota (ConnectionsPanel).
  */
 export function AppShell() {
   return (

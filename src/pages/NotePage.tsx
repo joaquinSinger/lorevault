@@ -6,6 +6,7 @@ import { CATEGORY_LABELS_SINGULAR, CATEGORY_TINTA_TEXT } from '../lib/categories
 import { useVault } from '../state/vault-context'
 import { Button } from '../components/Button'
 import { Cinta } from '../components/Cinta'
+import { ConnectionsPanel } from '../components/ConnectionsPanel'
 import { Markdown } from '../components/Markdown'
 import { NoteEditor } from '../components/NoteEditor'
 import { NotFoundPage } from './NotFoundPage'
@@ -81,10 +82,47 @@ function NoteView({ note }: { note: Note }) {
     }
   }
 
-  if (mode === 'edit') {
-    return <NoteEditor note={note} onDone={() => setMode('view')} />
-  }
+  // Layout "códice abierto": columna de lectura + marginalia derecha con
+  // las conexiones, visible también durante la edición.
+  return (
+    <div className="grid max-w-5xl gap-10 lg:grid-cols-[minmax(0,65ch)_16rem]">
+      <div className="min-w-0">
+        {mode === 'edit' ? (
+          <NoteEditor note={note} onDone={() => setMode('view')} />
+        ) : (
+          <NoteReader
+            note={note}
+            mode={mode}
+            deleting={deleting}
+            onEdit={() => setMode('edit')}
+            onAskDelete={() => setMode('confirm-delete')}
+            onCancelDelete={() => setMode('view')}
+            onDelete={handleDelete}
+          />
+        )}
+      </div>
+      <ConnectionsPanel note={note} />
+    </div>
+  )
+}
 
+function NoteReader({
+  note,
+  mode,
+  deleting,
+  onEdit,
+  onAskDelete,
+  onCancelDelete,
+  onDelete,
+}: {
+  note: Note
+  mode: Mode
+  deleting: boolean
+  onEdit: () => void
+  onAskDelete: () => void
+  onCancelDelete: () => void
+  onDelete: () => void
+}) {
   return (
     <article className="max-w-[65ch]">
       <header className="border-b border-trazo pb-5">
@@ -99,8 +137,8 @@ function NoteView({ note }: { note: Note }) {
             </div>
           </div>
           <div className="flex shrink-0 gap-2">
-            <Button onClick={() => setMode('edit')}>Editar</Button>
-            <Button onClick={() => setMode('confirm-delete')}>Eliminar</Button>
+            <Button onClick={onEdit}>Editar</Button>
+            <Button onClick={onAskDelete}>Eliminar</Button>
           </div>
         </div>
       </header>
@@ -113,10 +151,10 @@ function NoteView({ note }: { note: Note }) {
             se puede deshacer.
           </p>
           <div className="mt-4 flex gap-2">
-            <Button variant="primary" disabled={deleting} onClick={handleDelete}>
+            <Button variant="primary" disabled={deleting} onClick={onDelete}>
               Eliminar definitivamente
             </Button>
-            <Button onClick={() => setMode('view')}>Cancelar</Button>
+            <Button onClick={onCancelDelete}>Cancelar</Button>
           </div>
         </div>
       )}

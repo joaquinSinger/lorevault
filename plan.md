@@ -86,9 +86,9 @@ llega en las tareas 4 (listado) y 5 (editor).
 
 ## 6. Conexiones entre notas
 
-- [ ] Selector de búsqueda para elegir nota a conectar
-- [ ] Lista de notas conectadas, visible desde ambos lados
-- [ ] Acción de quitar conexión (sin borrar las notas)
+- [x] Selector de búsqueda para elegir nota a conectar
+- [x] Lista de notas conectadas, visible desde ambos lados
+- [x] Acción de quitar conexión (sin borrar las notas)
 
 ---
 
