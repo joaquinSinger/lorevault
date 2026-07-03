@@ -14,6 +14,9 @@ archivos mandan. Las tareas del plan se ejecutan una por una, en orden.
 - **Estilos:** Tailwind CSS
 - **Persistencia:** IndexedDB vía `idb`, envuelta en capa propia (`src/lib/storage/`)
 - **IDs:** `uuid` v4
+- **Markdown:** `react-markdown` (componente `Markdown`, estilos propios del
+  vault). Editor con guardado híbrido (decidido en la tarea 5): autoguardado
+  con debounce ~1s + Ctrl/Cmd+S; toggle Escribir/Vista previa.
 - **Ruteo:** React Router
 - **Estado global:** Context API (decidido en la tarea 3). El estado compartido
   es mínimo: `VaultContext` (`src/state/`) expone solo una señal de invalidación

@@ -74,9 +74,13 @@ llega en las tareas 4 (listado) y 5 (editor).
 
 ## 5. Editor Markdown
 
-- [ ] Textarea de edición + panel de preview renderizado
-- [ ] Decidir y confirmar: autoguardado con debounce vs guardado explícito
-- [ ] Indicador de estado de guardado
+- [x] Textarea de edición + panel de preview renderizado → toggle
+      Escribir/Vista previa (mantiene la columna de lectura ≤65ch);
+      render con `react-markdown`, también en la vista de lectura
+- [x] Decidir y confirmar: autoguardado con debounce vs guardado explícito
+      → **Híbrido**: autoguardado con debounce ~1s + Ctrl/Cmd+S para forzar
+      guardado inmediato
+- [x] Indicador de estado de guardado (Guardado / Sin guardar / Guardando…)
 
 ---
 
