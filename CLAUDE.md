@@ -15,7 +15,10 @@ archivos mandan. Las tareas del plan se ejecutan una por una, en orden.
 - **Persistencia:** IndexedDB vía `idb`, envuelta en capa propia (`src/lib/storage/`)
 - **IDs:** `uuid` v4
 - **Ruteo:** React Router
-- **Estado global:** a decidir en la tarea 3 (Context API vs Zustand) — no asumir uno
+- **Estado global:** Context API (decidido en la tarea 3). El estado compartido
+  es mínimo: `VaultContext` (`src/state/`) expone solo una señal de invalidación
+  (`revision`/`invalidate`) para releer de storage tras mutaciones. No sumar
+  Zustand ni otra librería de estado.
 - **Tests:** Vitest (obligatorios para la capa de persistencia)
 - **CI:** GitHub Actions, un solo workflow: lint + build en cada push. No agregar más pasos.
 
@@ -48,6 +51,7 @@ src/
   types/        # Tipos de dominio: Note, Connection, Category (centralizados acá)
   lib/
     storage/    # Capa de persistencia (único punto de acceso a IndexedDB)
+  state/        # Estado global (VaultContext + VaultProvider)
   components/   # Componentes de UI
   pages/        # Vistas ruteadas (listado por categoría, nota individual)
 ```

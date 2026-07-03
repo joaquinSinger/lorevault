@@ -51,10 +51,15 @@ en orden. No saltar tareas: cada una asume que la anterior está cerrada.
 
 ## 3. Layout base y navegación
 
-- [ ] Shell de la app: navegación entre las 4 categorías + buscador global
-- [ ] Ruteo con React Router: listado por categoría, vista de nota individual
-- [ ] Estado global (decidir Context API vs Zustand al llegar a esta tarea,
-      según cuánto estado se termine compartiendo)
+- [x] Shell de la app: navegación entre las 4 categorías + buscador global
+- [x] Ruteo con React Router: listado por categoría, vista de nota individual
+- [x] Estado global (decidir Context API vs Zustand al llegar a esta tarea,
+      según cuánto estado se termine compartiendo) → **Context API**: el estado
+      compartido es solo una señal de invalidación (`VaultContext.revision`),
+      no justifica una librería
+
+Vistas de categoría y de nota quedan como placeholders: su contenido real
+llega en las tareas 4 (listado) y 5 (editor).
 
 ---
 
