@@ -118,6 +118,6 @@ llega en las tareas 4 (listado) y 5 (editor).
       (proyecto conectado al repo de GitHub: cada push a `main` deploya solo;
       `vercel.json` con rewrite a `index.html` para las rutas del SPA)
 - [x] Escribir README del proyecto siguiendo la convención del portfolio
-- [ ] Actualizar tabla de proyectos en el README del repo principal
-      (pendiente: el README del perfil de GitHub todavía no tiene tabla de
-      proyectos — definir dónde va y crearla)
+- [x] Actualizar tabla de proyectos en el README del repo principal
+      → se creó la tabla en el README del perfil (`joaquinSinger/joaquinSinger`),
+      que no la tenía, con LoreVault como primera fila
