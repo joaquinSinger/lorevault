@@ -183,6 +183,17 @@ describe('searchNotesByTitle', () => {
     expect(results.map((n) => n.title)).toEqual(['El gris eterno', 'Kaelen el Gris'])
   })
 
+  it('no distingue tildes ni diéresis, en query ni en título', async () => {
+    await createNote({ category: 'personaje', title: 'Aldarión' })
+    await createNote({ category: 'locacion', title: 'Puerto Umbrío' })
+
+    const sinTilde = await searchNotesByTitle('aldarion')
+    expect(sinTilde.map((n) => n.title)).toEqual(['Aldarión'])
+
+    const conTilde = await searchNotesByTitle('umbrío')
+    expect(conTilde.map((n) => n.title)).toEqual(['Puerto Umbrío'])
+  })
+
   it('devuelve vacío para query vacía o solo espacios', async () => {
     await createNote({ category: 'personaje', title: 'Kaelen' })
     await expect(searchNotesByTitle('')).resolves.toEqual([])

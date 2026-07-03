@@ -83,16 +83,24 @@ export async function deleteNote(id: string): Promise<void> {
   await tx.done
 }
 
+/** Minúsculas y sin diacríticos: "Aldarión" y "aldarion" comparan igual. */
+function normalizeForSearch(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
 /**
- * Filtro in-memory (substring, sin distinguir mayúsculas) sobre el índice
- * `title`, que además devuelve los resultados en orden alfabético.
+ * Filtro in-memory (substring, sin distinguir mayúsculas ni tildes) sobre el
+ * índice `title`, que además devuelve los resultados en orden alfabético.
  */
 export async function searchNotesByTitle(query: string): Promise<Note[]> {
-  const q = query.trim().toLowerCase()
+  const q = normalizeForSearch(query.trim())
   if (!q) {
     return []
   }
   const db = await getDB()
   const all = await db.getAllFromIndex('notes', 'title')
-  return all.filter((note) => note.title.toLowerCase().includes(q))
+  return all.filter((note) => normalizeForSearch(note.title).includes(q))
 }

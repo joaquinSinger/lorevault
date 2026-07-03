@@ -94,7 +94,9 @@ llega en las tareas 4 (listado) y 5 (editor).
 
 ## 7. Buscador
 
-- [ ] Input de búsqueda global por título, resultados en tiempo real
+- [x] Input de búsqueda global por título, resultados en tiempo real
+      (construido junto con el shell en la tarea 3; acá se cerró haciendo
+      la búsqueda insensible a tildes en la capa de storage, con test)
 
 ---
 
