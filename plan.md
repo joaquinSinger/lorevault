@@ -112,7 +112,12 @@ llega en las tareas 4 (listado) y 5 (editor).
 
 ## 9. Cierre de Etapa 1
 
-- [ ] Revisar checklist de "Definición de hecho" de `spec.md` §7
-- [ ] Deploy a Vercel (o similar, gratuito)
-- [ ] Escribir README del proyecto siguiendo la convención del portfolio
+- [x] Revisar checklist de "Definición de hecho" de `spec.md` §7
+      (ítems 1-6 cubiertos y verificados en las tareas 4-8; el 7 es el README)
+- [x] Deploy a Vercel (o similar, gratuito) → https://lorevault-opal.vercel.app
+      (proyecto conectado al repo de GitHub: cada push a `main` deploya solo;
+      `vercel.json` con rewrite a `index.html` para las rutas del SPA)
+- [x] Escribir README del proyecto siguiendo la convención del portfolio
 - [ ] Actualizar tabla de proyectos en el README del repo principal
+      (pendiente: el README del perfil de GitHub todavía no tiene tabla de
+      proyectos — definir dónde va y crearla)

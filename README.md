@@ -1,32 +1,54 @@
-# React + TypeScript + Vite
+# LoreVault
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Content Vault local para escritores de fantasía y ficción.
 
-Currently, two official plugins are available:
+**Demo:** https://lorevault-opal.vercel.app
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Qué problema resuelve
 
-## React Compiler
+Escribir un mundo de ficción genera decenas de personajes, lugares y reglas
+de lore desparramados en cuadernos y documentos sueltos. Cuando la historia
+crece, mantener la consistencia (¿de qué color eran los ojos de este
+personaje? ¿en qué capítulo apareció esta ciudad?) se vuelve un trabajo en
+sí mismo. LoreVault centraliza ese material en un solo lugar, conectado y
+buscable.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Cómo funciona
 
-## Expanding the Oxlint configuration
+- **Notas en 4 categorías fijas**: personajes, locaciones, lore y capítulos,
+  con contenido en Markdown (edición con autoguardado + vista previa).
+- **Conexiones entre notas**: no dirigidas, visibles desde ambos lados,
+  mostradas como marginalia junto a la nota (layout de "códice abierto").
+- **Buscador global por título**: en tiempo real, sin distinguir mayúsculas
+  ni tildes.
+- **Backup manual**: exportar todo el vault a un `.json` e importarlo después
+  (reemplazo total con confirmación).
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+Todo es 100% local: los datos viven en IndexedDB del navegador, no hay
+backend ni cuentas. El export a JSON es la forma de respaldar o mover el
+vault a otro navegador.
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## Stack
+
+- React + TypeScript (estricto) + Vite
+- Tailwind CSS v4 (tema propio "Tinta y musgo", tokens en `src/index.css`)
+- IndexedDB vía [`idb`](https://github.com/jakearchibald/idb), aislada en
+  `src/lib/storage/` — la UI nunca toca IndexedDB directo, lo que deja lista
+  la migración a un backend (Etapa 2) sin tocar componentes
+- React Router, Context API para el estado global mínimo
+- Vitest para la capa de persistencia, GitHub Actions (lint + build)
+
+## Cómo correrlo local
+
+```bash
+npm install
+npm run dev      # servidor de desarrollo
+npm run test     # tests de la capa de persistencia
+npm run build    # build de producción
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Roadmap
+
+- **Etapa 1 (esta):** MVP local — completa
+- **Etapa 2:** sync con backend (Supabase), multi-dispositivo
+- **Etapa 3:** vista de grafo de conexiones
