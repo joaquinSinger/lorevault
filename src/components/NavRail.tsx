@@ -1,6 +1,7 @@
 import { Link, NavLink } from 'react-router'
 import { CATEGORIES } from '../types'
 import { CATEGORY_LABELS } from '../lib/categories'
+import { BackupPanel } from './BackupPanel'
 import { Cinta } from './Cinta'
 import { SearchBox } from './SearchBox'
 
@@ -35,6 +36,10 @@ export function NavRail() {
           ))}
         </ul>
       </nav>
+
+      <div className="mt-auto">
+        <BackupPanel />
+      </div>
     </aside>
   )
 }

@@ -14,5 +14,5 @@ export {
   type UpdateNoteInput,
 } from './notes'
 export { createConnection, getConnectionsByNoteId, deleteConnection } from './connections'
-export { exportVault, importVault, VAULT_EXPORT_VERSION } from './vault'
+export { exportVault, importVault, parseVaultExport, VAULT_EXPORT_VERSION } from './vault'
 export { closeDB } from './db'

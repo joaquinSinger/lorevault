@@ -102,9 +102,11 @@ llega en las tareas 4 (listado) y 5 (editor).
 
 ## 8. Backup
 
-- [ ] Botón de exportar vault completo a `.json`
-- [ ] Botón de importar `.json` con confirmación de reemplazo total
-- [ ] Validación básica de estructura del archivo importado
+- [x] Botón de exportar vault completo a `.json`
+- [x] Botón de importar `.json` con confirmación de reemplazo total
+- [x] Validación básica de estructura del archivo importado
+      (al elegir el archivo, vía `parseVaultExport`; la confirmación muestra
+      cuántas notas y conexiones trae el backup antes de reemplazar)
 
 ---
 

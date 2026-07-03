@@ -62,7 +62,12 @@ function isConnection(value: unknown): value is Connection {
   )
 }
 
-function parseVaultExport(data: unknown): VaultExport {
+/**
+ * Valida la estructura de un backup y lo devuelve tipado. Lanza `Error` con
+ * mensaje mostrable si la versión no está soportada o la forma es incorrecta.
+ * La UI la usa al elegir el archivo, antes de pedir confirmación.
+ */
+export function parseVaultExport(data: unknown): VaultExport {
   if (typeof data !== 'object' || data === null) {
     throw new Error('Archivo inválido: se esperaba un objeto JSON')
   }
