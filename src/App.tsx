@@ -1,7 +1,7 @@
 function App() {
   return (
     <main className="flex min-h-screen items-center justify-center">
-      <h1 className="text-3xl font-bold">LoreVault</h1>
+      <h1 className="text-display font-serif font-medium">LoreVault</h1>
     </main>
   )
 }

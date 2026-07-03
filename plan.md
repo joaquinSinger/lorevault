@@ -39,13 +39,13 @@ en orden. No saltar tareas: cada una asume que la anterior está cerrada.
 
 ## 2. Dirección visual (skill de frontend-design)
 
-- [ ] Definir brief de diseño: subject (worldbuilding de fantasía),
+- [x] Definir brief de diseño: subject (worldbuilding de fantasía),
       audiencia (vos como escritor), trabajo de la página
-- [ ] Generar sistema de tokens: paleta (4-6 hex), tipografía (display +
+- [x] Generar sistema de tokens: paleta (4-6 hex), tipografía (display +
       body + utility), concepto de layout, elemento firma
-- [ ] Revisar el sistema contra el brief antes de construir (evitar
+- [x] Revisar el sistema contra el brief antes de construir (evitar
       defaults genéricos de IA)
-- [ ] Configurar tokens en Tailwind (colores, fuentes, escala tipográfica)
+- [x] Configurar tokens en Tailwind (colores, fuentes, escala tipográfica)
 
 ---
 

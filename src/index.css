@@ -1,1 +1,65 @@
+/* Fuentes self-hosted (@fontsource): Alegreya para contenido, Alegreya Sans para UI */
+@import '@fontsource-variable/alegreya/wght.css';
+@import '@fontsource-variable/alegreya/wght-italic.css';
+@import '@fontsource/alegreya-sans/400.css';
+@import '@fontsource/alegreya-sans/500.css';
+@import '@fontsource/alegreya-sans/700.css';
+
 @import 'tailwindcss';
+
+/*
+ * Dirección visual "El estudio del cronista" (tarea 2 de plan.md).
+ * Tema oscuro único por decisión de diseño, no un dark mode derivado.
+ * Latón es el único acento y se reserva para lo accionable (enlaces,
+ * foco, acciones primarias); las tintas codifican categoría y nunca
+ * marcan acción.
+ */
+@theme {
+  /* Materiales */
+  --color-nogal: #1a1510; /* fondo */
+  --color-cuero: #261f16; /* superficies elevadas */
+  --color-trazo: #3b3325; /* bordes y reglas */
+  --color-pergamino: #e6dac4; /* texto principal */
+  --color-sepia: #9a8b72; /* texto secundario */
+  --color-laton: #c29343; /* acento accionable */
+
+  /* Tintas de categoría (Category) */
+  --color-tinta-personaje: #b56a5c; /* retinto */
+  --color-tinta-locacion: #7e9b6d; /* verdín */
+  --color-tinta-lore: #8e7baa; /* amatista */
+  --color-tinta-capitulo: #6e93b4; /* azul de escriba */
+
+  /* Tipografía: serif para el contenido del vault, sans para el chrome */
+  --font-serif: 'Alegreya Variable', 'Iowan Old Style', Georgia, serif;
+  --font-sans: 'Alegreya Sans', 'Gill Sans', 'Segoe UI', sans-serif;
+
+  /* Escala semántica (se suma a la escala por defecto de Tailwind) */
+  --text-display: 2.75rem; /* títulos de página */
+  --text-display--line-height: 1.1;
+  --text-title: 2rem; /* título de nota */
+  --text-title--line-height: 1.15;
+  --text-reading: 1.125rem; /* contenido markdown, medida ≤65ch */
+  --text-reading--line-height: 1.65;
+  --text-label: 0.8125rem; /* etiquetas en mayúsculas */
+  --text-label--line-height: 1.2;
+  --text-label--letter-spacing: 0.14em;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-nogal font-sans text-pergamino antialiased;
+  }
+
+  ::selection {
+    background-color: --alpha(var(--color-laton) / 30%);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-laton);
+    outline-offset: 2px;
+  }
+}

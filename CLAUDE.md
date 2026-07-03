@@ -19,6 +19,28 @@ archivos mandan. Las tareas del plan se ejecutan una por una, en orden.
 - **Tests:** Vitest (obligatorios para la capa de persistencia)
 - **CI:** GitHub Actions, un solo workflow: lint + build en cada push. No agregar más pasos.
 
+## Dirección visual — "El estudio del cronista"
+
+Tokens definidos en `src/index.css` (`@theme`, Tailwind v4 — no hay
+`tailwind.config.js`). Tema oscuro único por decisión de diseño.
+
+- **Materiales:** `nogal` (fondo), `cuero` (superficies), `trazo` (bordes),
+  `pergamino` (texto), `sepia` (texto secundario), `laton` (acento).
+- **Latón es el único acento** y se reserva para lo accionable (enlaces,
+  foco, acciones primarias). Nunca decora ni marca categoría.
+- **Tintas de categoría** (`tinta-personaje`, `tinta-locacion`, `tinta-lore`,
+  `tinta-capitulo`): codifican categoría en nav, encabezados y conexiones.
+  Nunca marcan acción.
+- **Tipografía:** `font-serif` (Alegreya) para títulos y contenido del vault
+  (incluido el editor); `font-sans` (Alegreya Sans) para el chrome de la UI;
+  etiquetas con `text-label` + mayúsculas. Fuentes self-hosted vía
+  `@fontsource`, importadas en `index.css`.
+- **Layout ("códice abierto"):** rail de navegación izquierdo (categorías +
+  buscador), columna de lectura ≤65ch (`text-reading`), marginalia derecha
+  con las conexiones de la nota. Elemento firma: cintas marcapáginas con
+  corte en V y su tinta, repetidas en nav / encabezado de nota / conexiones.
+- Evitar: texturas de pergamino falso, ornamento medieval, neones.
+
 ## Estructura de carpetas
 
 ```
