@@ -49,6 +49,11 @@ VITE_SUPABASE_URL=      # Project URL
 VITE_SUPABASE_ANON_KEY= # anon/public key (pública por diseño; RLS protege los datos)
 ```
 
+Después, aplicar el schema de la base: pegar el contenido de
+[`supabase/migrations/20260706000000_etapa2_schema.sql`](supabase/migrations/20260706000000_etapa2_schema.sql)
+en el SQL editor del dashboard y ejecutarlo (crea las 5 tablas y las
+políticas de RLS).
+
 ```bash
 npm install
 npm run dev      # servidor de desarrollo
