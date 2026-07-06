@@ -1,171 +1,188 @@
-# LoreVault — Especificación Técnica (Etapa 1: MVP Local)
+# LoreVault — Spec Etapa 2: Supabase + Sync
 
-**Estado:** Aprobada para desarrollo
-**Última actualización:** 2026-07-01
+## 1. Objetivo de la etapa
 
----
+Reemplazar IndexedDB por Supabase como backend de datos (Postgres + Auth + RLS),
+pasando de una app local single-usuario a una app online-only con autenticación
+real y múltiples vaults por usuario. Sin sync en tiempo real, sin soporte
+offline, sin colaboración — pero con el modelo de datos preparado para
+habilitarlos en etapas futuras sin rediseñar.
 
-## 1. Visión y alcance
+## 2. Decisiones de arquitectura
 
-LoreVault es un Content Vault para escritores de fantasía y ficción: permite
-estructurar personajes, locaciones, elementos de lore y capítulos, y
-conectarlos entre sí para mantener consistencia narrativa.
+| Decisión | Elección | Motivo |
+|---|---|---|
+| Sincronización | Reemplazo total (online-only) | Menor complejidad; no hay usuarios reales todavía que dependan de offline |
+| Vaults por usuario | Múltiples | Un vault por mundo/proyecto de ficción |
+| Colaboración | No implementada, RLS preparada | Se anticipa sin sobreconstruir |
+| Migración de datos | No aplica | No hay datos reales en producción |
+| Tags | Normalizadas (tabla propia) | Permite rename global y color-coding futuro en el grafo (Etapa 3) |
+| Capa de backend | Ninguna (frontend-only) | Igual que Etapa 1; Supabase actúa como BaaS, RLS es el único perímetro de seguridad |
 
-**Etapa 1** entrega un MVP 100% local (sin backend, sin costo de
-infraestructura), usable en un único navegador, con:
+Nota sobre el punto anterior: a diferencia de Proposal Generator (que valida
+JWT vía JWKS en un guard de NestJS), LoreVault no tiene backend propio. El
+cliente habla directo con Supabase usando `supabase-js`, y la seguridad vive
+enteramente en las políticas RLS de Postgres. No hay capa intermedia que
+revise permisos — si una policy está mal escrita, el dato queda expuesto.
 
-- CRUD de notas en 4 categorías fijas
-- Editor de texto plano con renderizado Markdown
-- Conexiones simples entre notas
-- Buscador por título
-- Export/import de todos los datos en JSON (backup manual)
+## 3. Modelo de datos
 
-**No incluye** (ver sección 6): autenticación, sync en la nube, multi-vault,
-vista de grafo, asistente de IA. Esas capacidades llegan en Etapas 2 y 3.
+```sql
+-- ============================================
+-- LoreVault Etapa 2 — Schema Supabase
+-- ============================================
 
----
+create table vaults (
+  id          uuid primary key default gen_random_uuid(),
+  owner_id    uuid not null references auth.users(id) on delete cascade,
+  name        text not null,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
 
-## 2. Modelo de datos (IndexedDB)
+create table notes (
+  id          uuid primary key default gen_random_uuid(),
+  vault_id    uuid not null references vaults(id) on delete cascade,
+  type        text not null check (type in ('character', 'location', 'lore', 'chapter')),
+  title       text not null,
+  content     text not null default '',
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
 
-Se usa `uuid v4` para todos los IDs. Motivo: si en Etapa 1 usáramos
-autoincrement de IndexedDB, migrar a Supabase en Etapa 2 obligaría a
-remapear todas las foreign keys. Con UUID, el ID de una nota es el mismo
-en el navegador y en Postgres el día que migre.
+create table connections (
+  id                uuid primary key default gen_random_uuid(),
+  vault_id          uuid not null references vaults(id) on delete cascade,
+  source_note_id    uuid not null references notes(id) on delete cascade,
+  target_note_id    uuid not null references notes(id) on delete cascade,
+  created_at        timestamptz not null default now(),
 
-### Store: `notes`
+  constraint no_self_connection check (source_note_id <> target_note_id)
+);
 
-| Campo     | Tipo                                              | Notas                          |
-| --------- | ------------------------------------------------- | ------------------------------ |
-| id        | string (uuid v4)                                  | PK                             |
-| category  | 'personaje' \| 'locacion' \| 'lore' \| 'capitulo' | fija en Etapa 1, no editable   |
-| title     | string                                            | requerido, indexado            |
-| content   | string                                            | markdown plano                 |
-| order     | number \| null                                    | solo relevante para 'capitulo' |
-| createdAt | string (ISO 8601)                                 |                                |
-| updatedAt | string (ISO 8601)                                 |                                |
+create table tags (
+  id          uuid primary key default gen_random_uuid(),
+  vault_id    uuid not null references vaults(id) on delete cascade,
+  name        text not null,
+  color       text,  -- opcional, sin uso en Etapa 2; reservado para grafo en Etapa 3
+  created_at  timestamptz not null default now(),
 
-Índices: `category`, `title` (búsqueda), `updatedAt`.
+  constraint unique_tag_per_vault unique (vault_id, name)
+);
 
-### Store: `connections`
+create table note_tags (
+  note_id     uuid not null references notes(id) on delete cascade,
+  tag_id      uuid not null references tags(id) on delete cascade,
+  primary key (note_id, tag_id)
+);
+```
 
-| Campo        | Tipo              | Notas         |
-| ------------ | ----------------- | ------------- |
-| id           | string (uuid v4)  | PK            |
-| sourceNoteId | string            | FK → notes.id |
-| targetNoteId | string            | FK → notes.id |
-| createdAt    | string (ISO 8601) |               |
+Notas de diseño:
+- `type` usa `check` en vez de un `enum` de Postgres para simplificar
+  migraciones futuras si se agrega un quinto tipo (alterar un check es más
+  simple que alterar un enum type).
+- `connections` mantiene `vault_id` propio (no solo se infiere de las notas)
+  para que las policies de RLS no necesiten un `join` — trade-off de
+  denormalización a favor de policies más simples y rápidas.
+- `tags` está scopeado por vault (`unique_tag_per_vault`), no es global —
+  dos vaults distintos pueden tener un tag "antagonista" sin colisionar.
 
-Índices: `sourceNoteId`, `targetNoteId` (para queries bidireccionales,
-necesarias cuando se construya la vista de grafo en Etapa 3).
+## 4. Seguridad — Row Level Security
 
-Diseño intencional: se guarda como store separado, no como array embebido
-dentro de `notes`. Así, en Etapa 3, la vista de grafo puede consultar todas
-las aristas sin recorrer cada nota. Conexión es **no dirigida y sin
-etiqueta** en Etapa 1 (decisión tomada); si más adelante se necesita
-tipar la relación ("aparece en", "gobierna"), se agrega el campo `label`
-sin romper el modelo existente.
+```sql
+alter table vaults enable row level security;
+alter table notes enable row level security;
+alter table connections enable row level security;
+alter table tags enable row level security;
+alter table note_tags enable row level security;
 
-### Borrado en cascada
+-- Función centralizada: toda policy de notes/connections/tags pasa por acá.
+-- El día que se agregue colaboración, el cambio es solo dentro de esta función.
+create or replace function user_has_vault_access(p_vault_id uuid)
+returns boolean
+language sql
+security definer
+as $$
+  select exists (
+    select 1 from vaults
+    where id = p_vault_id and owner_id = auth.uid()
+  );
+$$;
 
-Al eliminar una nota, se eliminan también todas las `connections` donde
-esa nota sea `sourceNoteId` o `targetNoteId`. Esto ocurre en una única
-transacción IndexedDB para evitar conexiones huérfanas.
+create policy "vaults_owner_access" on vaults
+  for all
+  using (owner_id = auth.uid())
+  with check (owner_id = auth.uid());
 
-### Export / Import (backup)
+create policy "notes_vault_access" on notes
+  for all
+  using (user_has_vault_access(vault_id))
+  with check (user_has_vault_access(vault_id));
 
-- **Export**: genera un `.json` con `{ version, exportedAt, notes[],
-connections[] }` y dispara la descarga del archivo.
-- **Import**: valida estructura básica (version soportada, arrays
-  presentes) y ofrece reemplazar o fusionar con los datos actuales.
-  Para Etapa 1, alcanza con **reemplazar** (fusionar queda para Etapa 2,
-  donde hay backend para resolver conflictos).
+create policy "connections_vault_access" on connections
+  for all
+  using (user_has_vault_access(vault_id))
+  with check (user_has_vault_access(vault_id));
 
----
+create policy "tags_vault_access" on tags
+  for all
+  using (user_has_vault_access(vault_id))
+  with check (user_has_vault_access(vault_id));
 
-## 3. Arquitectura frontend
+-- note_tags no tiene vault_id propio: valida a través de la nota asociada
+create policy "note_tags_vault_access" on note_tags
+  for all
+  using (
+    exists (
+      select 1 from notes n
+      where n.id = note_tags.note_id
+        and user_has_vault_access(n.vault_id)
+    )
+  )
+  with check (
+    exists (
+      select 1 from notes n
+      where n.id = note_tags.note_id
+        and user_has_vault_access(n.vault_id)
+    )
+  );
+```
 
-- **Stack**: React + TypeScript + Vite + Tailwind CSS
-- **Persistencia**: capa de abstracción propia (`lib/storage/`) que
-  envuelve `idb` (wrapper de IndexedDB). Todos los componentes hablan
-  contra esta capa, nunca directamente contra IndexedDB. Esto es lo que
-  hace viable reemplazar la implementación por llamadas a Supabase en
-  Etapa 2 sin tocar UI.
-- **Estado**: Context API o Zustand (a definir en plan.md) — sin
-  necesidad de librería pesada dado que no hay estado de servidor real.
-- **Ruteo**: React Router, rutas por categoría y por nota individual.
+## 5. Capa de acceso a datos (frontend)
 
----
+- `notes.ts` y `connections.ts` dejan de hablarle a `idb` y pasan a usar
+  `supabase-js`. Se mantienen las mismas firmas de función donde sea posible,
+  para no romper la capa de UI que ya las consume.
+- Nuevo módulo `tags.ts`: CRUD de tags + asociación/desasociación con notas.
+- Nuevo módulo `vaults.ts`: listar, crear, renombrar, eliminar vaults del
+  usuario autenticado.
+- Todas las operaciones pasan de síncronas (IndexedDB local) a asíncronas
+  con latencia de red real: hay que agregar estados de `loading` / `error`
+  donde antes no existían.
 
-## 4. Funcionalidades y criterios de aceptación
+## 6. Cambios de UX derivados del modelo
 
-### 4.1 CRUD de notas
+- **Pantalla de selección de vault** (nueva, obligatoria): al loguearse, el
+  usuario elige un vault existente o crea uno nuevo antes de ver notas. Es
+  consecuencia directa de soportar múltiples vaults, no una feature opcional.
+- **Selector de tags** en el editor de notas: autocompletar sobre tags
+  existentes del vault + opción de crear uno nuevo al vuelo.
+- **Estados de guardado**: el autoguardado (debounce + botón "Listo") necesita
+  reflejar "guardando..." / "error al guardar", algo que no existía cuando
+  todo era local e instantáneo.
 
-- Crear nota eligiendo categoría, con título obligatorio
-- Editar título y contenido
-- Eliminar nota (con confirmación, dado el borrado en cascada de conexiones)
-- Listar notas agrupadas por categoría
+## 7. Explícitamente fuera de alcance en Etapa 2
 
-### 4.2 Editor Markdown
+- Sync en tiempo real (Supabase Realtime) — se evalúa en Etapa 3
+- Soporte offline
+- Colaboración/compartir un vault entre usuarios (la RLS lo deja preparado,
+  no se construye la UI ni la tabla de miembros)
+- Migración de datos existentes (no aplica, no hay datos reales)
+- Color-coding de tags en UI (columna `color` reservada, sin consumo aún)
 
-- Textarea de texto plano para edición
-- Toggle o panel dividido con preview renderizado (soporta encabezados,
-  listas, negrita/itálica, enlaces)
-- Autoguardado (debounce ~1s) o guardado explícito — a definir en plan.md
+## 8. Próximos pasos
 
-### 4.3 Conexiones entre notas
-
-- Selector de búsqueda para elegir otra nota existente y conectarla
-- Ver, desde una nota, la lista de notas conectadas (bidireccional: si A
-  se conecta con B, aparece en ambas)
-- Quitar una conexión sin eliminar las notas
-
-### 4.4 Buscador
-
-- Input de búsqueda por título, resultados en tiempo real (sin backend,
-  filtro in-memory sobre el índice `title`)
-
-### 4.5 Backup
-
-- Botón de exportar todo el vault a `.json`
-- Botón de importar `.json`, con reemplazo total tras confirmación
-
----
-
-## 5. Convenciones de código
-
-- TypeScript estricto (`strict: true`)
-- Tipos de dominio (`Note`, `Connection`, `Category`) centralizados en
-  `src/types/`
-- Sin sobrecomplejizar CI: un workflow simple de GitHub Actions que
-  corra lint + build en cada push, nada más por ahora
-- README del repo siguiendo la plantilla estándar del portfolio (qué
-  problema resuelve, cómo funciona, stack, cómo correrlo local, link
-  deployado)
-
----
-
-## 6. Fuera de alcance (explícito)
-
-- Autenticación / multi-usuario
-- Sincronización en la nube
-- Múltiples vaults por usuario
-- Vista de grafo visual
-- Asistente de IA para continuidad narrativa
-- Fusión inteligente de datos en el import (solo reemplazo total)
-- Categorías personalizadas (las 4 categorías son fijas en Etapa 1)
-
----
-
-## 7. Definición de "hecho" para Etapa 1
-
-El MVP se considera completo cuando:
-
-1. Se pueden crear, editar, eliminar y listar notas de las 4 categorías
-2. El contenido markdown se edita y previsualiza correctamente
-3. Se pueden crear y eliminar conexiones entre dos notas cualesquiera,
-   visibles desde ambos lados
-4. El buscador filtra por título en tiempo real
-5. Exportar e importar el vault completo funciona sin pérdida de datos
-6. Los datos persisten entre sesiones del navegador (recargar la página
-   no borra nada)
-7. El repo tiene README siguiendo la convención del portfolio
+Generar `plan.md` con el desglose de tareas (incluyendo la pantalla de
+selección de vault como tarea explícita), y arrancar la ejecución en
+Claude Code siguiendo el mismo flujo de sesión-por-tarea validado en Etapa 1:
+revisar y commitear antes de avanzar a la siguiente.
