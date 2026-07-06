@@ -40,6 +40,15 @@ vault a otro navegador.
 
 ## Cómo correrlo local
 
+Requiere un proyecto de [Supabase](https://supabase.com) propio. Copiar
+`.env.example` a `.env.local` y completar con las credenciales del proyecto
+(Dashboard → Settings → API):
+
+```
+VITE_SUPABASE_URL=      # Project URL
+VITE_SUPABASE_ANON_KEY= # anon/public key (pública por diseño; RLS protege los datos)
+```
+
 ```bash
 npm install
 npm run dev      # servidor de desarrollo
