@@ -91,6 +91,31 @@ actualizado, la sesión va a confirmar contra un modelo de datos viejo.
 
 *Referencia: spec.md §6*
 
+## Tarea 8.5 — Orden manual de capítulos
+
+Feature nueva decidida durante la etapa (2026-07-07, al cerrar la Tarea 5):
+el schema original de Etapa 2 no tenía columna de orden y la UI para
+asignarlo nunca existió — incluso en Etapa 1, `Note.order` solo se leía en
+el listado de capítulos, nadie lo escribía. Va antes del deploy para que
+producción arranque con el schema final.
+
+- Migración nueva y aditiva (la tabla `notes` ya existe en producción):
+  `alter table notes add column sort_order integer`
+- `notes.ts`: sumar `sort_order` a las columnas y al mapeo (columna
+  `sort_order` ↔ campo de dominio `Note.order`), re-admitir el campo en los
+  inputs de creación/edición, y ordenar capítulos por `sort_order` en la
+  query (null al final)
+- Actualizar los comentarios que hoy documentan "siempre null" en
+  `src/types/index.ts` (`Note.order`) y en el mapeo de `notes.ts`
+- UI mínima: campo numérico "Orden" en el editor de notas, visible solo
+  para capítulos (reordenar con flechas o drag & drop queda para Etapa 3
+  si hace falta)
+- CategoryPage ya ordena capítulos en memoria por `Note.order`: verificar
+  que el listado refleje el orden sin tocarla
+- Tests en `notes.test.ts` para el mapeo y la edición del campo
+
+*Referencia: spec.md §3, §6*
+
 ## Tarea 9 — Deploy
 
 - Variables de entorno de Supabase configuradas en Vercel

@@ -46,6 +46,7 @@ create table notes (
   type        text not null check (type in ('character', 'location', 'lore', 'chapter')),
   title       text not null,
   content     text not null default '',
+  sort_order  integer,  -- orden manual de capítulos; null = sin orden (va al final)
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
@@ -86,6 +87,14 @@ Notas de diseño:
   denormalización a favor de policies más simples y rápidas.
 - `tags` está scopeado por vault (`unique_tag_per_vault`), no es global —
   dos vaults distintos pueden tener un tag "antagonista" sin colisionar.
+- `sort_order` (agregada durante la etapa, tarea 8.5 del plan) persiste el
+  orden manual de capítulos; para las demás categorías queda null. Se llama
+  `sort_order` y no `order` porque `order` es palabra reservada de SQL y
+  obligaría a comillas en cada query. En el dominio TypeScript el campo
+  sigue siendo `Note.order` — el mapeo es responsabilidad de `notes.ts`.
+  La tabla ya existe en producción: la columna llega por una migración
+  aditiva (`alter table notes add column`), no editando la migración
+  original.
 
 ## 4. Seguridad — Row Level Security
 
@@ -170,6 +179,9 @@ create policy "note_tags_vault_access" on note_tags
 - **Estados de guardado**: el autoguardado (debounce + botón "Listo") necesita
   reflejar "guardando..." / "error al guardar", algo que no existía cuando
   todo era local e instantáneo.
+- **Orden manual de capítulos** (tarea 8.5): campo numérico "Orden" en el
+  editor, visible solo para capítulos. Sin orden asignado, el capítulo va al
+  final del listado (orden por fecha de creación como desempate).
 
 ## 7. Explícitamente fuera de alcance en Etapa 2
 
