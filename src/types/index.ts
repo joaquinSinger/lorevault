@@ -15,7 +15,12 @@ export interface Note {
   category: Category
   title: string
   content: string
-  /** Posición del capítulo en la historia; null para las demás categorías. */
+  /**
+   * Posición del capítulo en la historia; null para las demás categorías.
+   * El schema de Etapa 2 no tiene columna que la persista (spec.md §3), así
+   * que desde Supabase llega siempre null; se conserva por el listado de
+   * capítulos y los backups de Etapa 1.
+   */
   order: number | null
   createdAt: string
   updatedAt: string

@@ -43,7 +43,7 @@ function CategoryView({ category }: { category: Category }) {
 
   useEffect(() => {
     let cancelled = false
-    void getNotesByCategory(category).then((list) => {
+    void getNotesByCategory(vaultId, category).then((list) => {
       if (!cancelled) {
         setNotes(sortNotes(category, list))
       }
@@ -51,7 +51,7 @@ function CategoryView({ category }: { category: Category }) {
     return () => {
       cancelled = true
     }
-  }, [category, revision])
+  }, [vaultId, category, revision])
 
   return (
     <div className="max-w-[65ch]">

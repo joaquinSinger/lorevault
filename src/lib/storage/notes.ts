@@ -1,86 +1,146 @@
-import { v4 as uuidv4 } from 'uuid'
+import { supabase } from '../auth/supabaseClient'
 import type { Category, Note } from '../../types'
-import { getDB } from './db'
+import { GENERIC_MESSAGE } from './errors'
+
+/*
+ * CRUD de notas sobre Supabase (antes idb). Mantiene las firmas de Etapa 1
+ * donde el id alcanza (getNoteById/updateNote/deleteNote); los listados, la
+ * búsqueda y la creación ahora reciben el vault activo porque un usuario
+ * puede tener varios vaults. Ese filtro por vault_id es solo UX: la seguridad
+ * real es la policy "notes_vault_access" (RLS).
+ */
+
+/** Fila de la tabla `notes` tal como la devuelve Postgres (snake_case). */
+interface NoteRow {
+  id: string
+  type: string
+  title: string
+  content: string
+  created_at: string
+  updated_at: string
+}
+
+const NOTE_COLUMNS = 'id, type, title, content, created_at, updated_at'
+
+/** La columna `type` guarda la categoría en inglés (check del schema); el dominio sigue en español. */
+const TYPE_BY_CATEGORY: Record<Category, string> = {
+  personaje: 'character',
+  locacion: 'location',
+  lore: 'lore',
+  capitulo: 'chapter',
+}
+
+const CATEGORY_BY_TYPE = Object.fromEntries(
+  Object.entries(TYPE_BY_CATEGORY).map(([category, type]) => [type, category]),
+) as Record<string, Category>
+
+function toNote(row: NoteRow): Note {
+  return {
+    id: row.id,
+    category: CATEGORY_BY_TYPE[row.type],
+    title: row.title,
+    content: row.content,
+    // El schema de Etapa 2 no tiene columna de orden (spec.md §3): el campo
+    // sigue en el dominio para el listado de capítulos, siempre null por ahora.
+    order: null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
 
 export interface CreateNoteInput {
+  vaultId: string
   category: Category
   title: string
   content?: string
-  order?: number | null
 }
 
-/** `id`, `category` y `createdAt` son inmutables tras la creación. */
-export type UpdateNoteInput = Partial<Pick<Note, 'title' | 'content' | 'order'>>
+/** `id`, `category`, `vaultId` y `createdAt` son inmutables tras la creación. */
+export type UpdateNoteInput = Partial<Pick<Note, 'title' | 'content'>>
 
 export async function createNote(input: CreateNoteInput): Promise<Note> {
   const title = input.title.trim()
   if (!title) {
     throw new Error('El título es requerido')
   }
-  const now = new Date().toISOString()
-  const note: Note = {
-    id: uuidv4(),
-    category: input.category,
-    title,
-    content: input.content ?? '',
-    order: input.order ?? null,
-    createdAt: now,
-    updatedAt: now,
+  const { data, error } = await supabase
+    .from('notes')
+    .insert({
+      vault_id: input.vaultId,
+      type: TYPE_BY_CATEGORY[input.category],
+      title,
+      content: input.content ?? '',
+    })
+    .select(NOTE_COLUMNS)
+    .single()
+  if (error) {
+    throw new Error(GENERIC_MESSAGE)
   }
-  const db = await getDB()
-  await db.add('notes', note)
-  return note
+  return toNote(data as NoteRow)
 }
 
+/** `undefined` si no existe o si RLS no deja verla (para el cliente es lo mismo). */
 export async function getNoteById(id: string): Promise<Note | undefined> {
-  const db = await getDB()
-  return db.get('notes', id)
+  const { data, error } = await supabase
+    .from('notes')
+    .select(NOTE_COLUMNS)
+    .eq('id', id)
+    .maybeSingle()
+  if (error) {
+    throw new Error(GENERIC_MESSAGE)
+  }
+  return data ? toNote(data as NoteRow) : undefined
 }
 
-export async function getNotesByCategory(category: Category): Promise<Note[]> {
-  const db = await getDB()
-  return db.getAllFromIndex('notes', 'category', category)
+export async function getNotesByCategory(
+  vaultId: string,
+  category: Category,
+): Promise<Note[]> {
+  const { data, error } = await supabase
+    .from('notes')
+    .select(NOTE_COLUMNS)
+    .eq('vault_id', vaultId)
+    .eq('type', TYPE_BY_CATEGORY[category])
+    .order('created_at', { ascending: true })
+  if (error) {
+    throw new Error(GENERIC_MESSAGE)
+  }
+  return ((data ?? []) as NoteRow[]).map(toNote)
 }
 
 export async function updateNote(id: string, changes: UpdateNoteInput): Promise<Note> {
   if (changes.title !== undefined && !changes.title.trim()) {
     throw new Error('El título es requerido')
   }
-  const db = await getDB()
-  const existing = await db.get('notes', id)
-  if (!existing) {
-    throw new Error(`No existe una nota con id ${id}`)
+  // No hay trigger de updated_at en el schema: lo refresca el cliente.
+  const patch: Record<string, string> = {
+    updated_at: new Date().toISOString(),
   }
-  const updated: Note = {
-    ...existing,
-    ...changes,
-    title: changes.title?.trim() ?? existing.title,
-    id: existing.id,
-    category: existing.category,
-    createdAt: existing.createdAt,
-    updatedAt: new Date().toISOString(),
+  if (changes.title !== undefined) {
+    patch.title = changes.title.trim()
   }
-  await db.put('notes', updated)
-  return updated
+  if (changes.content !== undefined) {
+    patch.content = changes.content
+  }
+  const { data, error } = await supabase
+    .from('notes')
+    .update(patch)
+    .eq('id', id)
+    .select(NOTE_COLUMNS)
+    .single()
+  // single() también falla si no hubo fila actualizada (nota inexistente o ajena).
+  if (error) {
+    throw new Error(GENERIC_MESSAGE)
+  }
+  return toNote(data as NoteRow)
 }
 
-/**
- * Borra la nota y, en cascada, todas sus conexiones (como source o target).
- * Todo ocurre en una única transacción: o se borra todo o no se borra nada.
- */
+/** Postgres borra en cascada sus connections (de ambos lados) y note_tags. */
 export async function deleteNote(id: string): Promise<void> {
-  const db = await getDB()
-  const tx = db.transaction(['notes', 'connections'], 'readwrite')
-  const connections = tx.objectStore('connections')
-  const [asSource, asTarget] = await Promise.all([
-    connections.index('sourceNoteId').getAllKeys(id),
-    connections.index('targetNoteId').getAllKeys(id),
-  ])
-  await Promise.all([
-    tx.objectStore('notes').delete(id),
-    ...[...asSource, ...asTarget].map((key) => connections.delete(key)),
-  ])
-  await tx.done
+  const { error } = await supabase.from('notes').delete().eq('id', id)
+  if (error) {
+    throw new Error(GENERIC_MESSAGE)
+  }
 }
 
 /** Minúsculas y sin diacríticos: "Aldarión" y "aldarion" comparan igual. */
@@ -92,15 +152,25 @@ function normalizeForSearch(text: string): string {
 }
 
 /**
- * Filtro in-memory (substring, sin distinguir mayúsculas ni tildes) sobre el
- * índice `title`, que además devuelve los resultados en orden alfabético.
+ * Búsqueda por substring del título, sin distinguir mayúsculas ni tildes.
+ * Postgres no tiene `unaccent` habilitado, así que se traen las notas del
+ * vault (en orden alfabético) y el filtro insensible a diacríticos se hace
+ * acá, igual que en Etapa 1 — escala de sobra para vaults personales.
  */
-export async function searchNotesByTitle(query: string): Promise<Note[]> {
+export async function searchNotesByTitle(vaultId: string, query: string): Promise<Note[]> {
   const q = normalizeForSearch(query.trim())
   if (!q) {
     return []
   }
-  const db = await getDB()
-  const all = await db.getAllFromIndex('notes', 'title')
-  return all.filter((note) => normalizeForSearch(note.title).includes(q))
+  const { data, error } = await supabase
+    .from('notes')
+    .select(NOTE_COLUMNS)
+    .eq('vault_id', vaultId)
+    .order('title', { ascending: true })
+  if (error) {
+    throw new Error(GENERIC_MESSAGE)
+  }
+  return ((data ?? []) as NoteRow[])
+    .map(toNote)
+    .filter((note) => normalizeForSearch(note.title).includes(q))
 }

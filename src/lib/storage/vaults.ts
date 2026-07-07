@@ -1,5 +1,6 @@
 import { supabase } from '../auth/supabaseClient'
 import type { Vault } from '../../types'
+import { GENERIC_MESSAGE } from './errors'
 
 /*
  * CRUD de vaults sobre Supabase. Primer módulo de la capa de storage que
@@ -19,9 +20,6 @@ interface VaultRow {
 }
 
 const VAULT_COLUMNS = 'id, name, created_at, updated_at'
-
-const GENERIC_MESSAGE =
-  'No se pudo completar la operación. Revisá tu conexión e intentá de nuevo.'
 
 function toVault(row: VaultRow): Vault {
   return {

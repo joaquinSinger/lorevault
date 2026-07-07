@@ -15,7 +15,7 @@ export function SearchBox() {
   // searchNotesByTitle ya devuelve [] para query vacía o solo espacios.
   useEffect(() => {
     let cancelled = false
-    void searchNotesByTitle(query).then((notes) => {
+    void searchNotesByTitle(vaultId, query).then((notes) => {
       if (!cancelled) {
         setResults(notes)
       }
@@ -23,7 +23,7 @@ export function SearchBox() {
     return () => {
       cancelled = true
     }
-  }, [query, revision])
+  }, [vaultId, query, revision])
 
   return (
     <search>

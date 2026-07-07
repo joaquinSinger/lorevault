@@ -33,7 +33,7 @@ export function NewNoteForm({ category }: { category: Category }) {
     }
     setSaving(true)
     try {
-      const note = await createNote({ category, title })
+      const note = await createNote({ vaultId, category, title })
       await navigate(`/vaults/${vaultId}/nota/${note.id}`)
       invalidate()
     } finally {

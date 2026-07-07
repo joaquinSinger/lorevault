@@ -61,7 +61,7 @@ export function ConnectionsPanel({ note }: { note: Note }) {
   // searchNotesByTitle ya devuelve [] para query vacía o solo espacios.
   useEffect(() => {
     let cancelled = false
-    void searchNotesByTitle(query).then((notes) => {
+    void searchNotesByTitle(vaultId, query).then((notes) => {
       if (!cancelled) {
         setCandidates(notes)
       }
@@ -69,7 +69,7 @@ export function ConnectionsPanel({ note }: { note: Note }) {
     return () => {
       cancelled = true
     }
-  }, [query, revision])
+  }, [vaultId, query, revision])
 
   const connectedIds = new Set(connected?.map((item) => item.note.id))
   const selectable = candidates.filter(
