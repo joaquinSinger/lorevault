@@ -191,6 +191,9 @@ create policy "note_tags_vault_access" on note_tags
   no se construye la UI ni la tabla de miembros)
 - Migración de datos existentes (no aplica, no hay datos reales)
 - Color-coding de tags en UI (columna `color` reservada, sin consumo aún)
+- Export/import de vault (el backup a JSON de Etapa 1 se retiró con la capa
+  `idb`; con los datos en Postgres su motivo original desaparece — si se
+  quiere como feature de portabilidad, se rediseña sobre Supabase en Etapa 3)
 
 ## 8. Próximos pasos
 

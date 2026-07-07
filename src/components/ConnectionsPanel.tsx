@@ -78,7 +78,7 @@ export function ConnectionsPanel({ note }: { note: Note }) {
 
   async function handleConnect(targetNoteId: string) {
     try {
-      await createConnection(note.id, targetNoteId)
+      await createConnection(vaultId, note.id, targetNoteId)
       setQuery('')
       setError(null)
       invalidate()

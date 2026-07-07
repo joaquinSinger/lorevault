@@ -1,7 +1,6 @@
 /**
  * API pública de la capa de persistencia. El resto de la app importa solo
- * de acá — nunca de `idb` ni de `supabase-js` directamente. `getDB` queda
- * deliberadamente sin exportar.
+ * de acá — nunca de `supabase-js` directamente.
  */
 export {
   getVaults,
@@ -21,5 +20,3 @@ export {
   type UpdateNoteInput,
 } from './notes'
 export { createConnection, getConnectionsByNoteId, deleteConnection } from './connections'
-export { exportVault, importVault, parseVaultExport, VAULT_EXPORT_VERSION } from './vault'
-export { closeDB } from './db'

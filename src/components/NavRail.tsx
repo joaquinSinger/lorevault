@@ -2,7 +2,6 @@ import { Link, NavLink } from 'react-router'
 import { CATEGORIES } from '../types'
 import { CATEGORY_LABELS } from '../lib/categories'
 import { useActiveVaultId } from '../state/vault-context'
-import { BackupPanel } from './BackupPanel'
 import { Cinta } from './Cinta'
 import { SearchBox } from './SearchBox'
 import { SessionPanel } from './SessionPanel'
@@ -46,7 +45,6 @@ export function NavRail() {
       </nav>
 
       <div className="mt-auto space-y-6">
-        <BackupPanel />
         <SessionPanel />
       </div>
     </aside>

@@ -131,3 +131,9 @@ producción arranque con el schema final.
 Lo listado en spec.md §7 (Realtime, offline, colaboración, migración de
 datos, color-coding de tags) no tiene tareas acá — se retoma si Etapa 3
 lo requiere.
+
+El export/import de vault de Etapa 1 se retiró en la Tarea 6 junto con la
+capa `idb`: su motivo original (datos atrapados en el IndexedDB de un solo
+navegador) desaparece con Postgres como backend. Si se quiere backup/
+portabilidad de un vault como feature, se rediseña sobre Supabase en
+Etapa 3.

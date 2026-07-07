@@ -19,7 +19,7 @@ export interface Note {
    * Posición del capítulo en la historia; null para las demás categorías.
    * El schema de Etapa 2 no tiene columna que la persista (spec.md §3), así
    * que desde Supabase llega siempre null; se conserva por el listado de
-   * capítulos y los backups de Etapa 1.
+   * capítulos.
    */
   order: number | null
   createdAt: string
@@ -32,11 +32,4 @@ export interface Connection {
   sourceNoteId: string
   targetNoteId: string
   createdAt: string
-}
-
-export interface VaultExport {
-  version: number
-  exportedAt: string
-  notes: Note[]
-  connections: Connection[]
 }
