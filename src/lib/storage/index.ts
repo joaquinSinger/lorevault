@@ -1,8 +1,15 @@
 /**
  * API pública de la capa de persistencia. El resto de la app importa solo
- * de acá — nunca de `idb` ni de los módulos internos. `getDB` queda
+ * de acá — nunca de `idb` ni de `supabase-js` directamente. `getDB` queda
  * deliberadamente sin exportar.
  */
+export {
+  getVaults,
+  getVaultById,
+  createVault,
+  renameVault,
+  deleteVault,
+} from './vaults'
 export {
   createNote,
   getNoteById,

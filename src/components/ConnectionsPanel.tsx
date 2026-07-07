@@ -9,7 +9,7 @@ import {
 } from '../lib/storage'
 import type { Note } from '../types'
 import { CATEGORY_LABELS_SINGULAR } from '../lib/categories'
-import { useVault } from '../state/vault-context'
+import { useActiveVaultId, useVault } from '../state/vault-context'
 import { Cinta } from './Cinta'
 
 /** Conexión resuelta al otro extremo, lista para renderizar. */
@@ -25,6 +25,7 @@ interface ConnectedNote {
  */
 export function ConnectionsPanel({ note }: { note: Note }) {
   const { revision, invalidate } = useVault()
+  const vaultId = useActiveVaultId()
   const [connected, setConnected] = useState<ConnectedNote[] | null>(null)
   const [query, setQuery] = useState('')
   const [candidates, setCandidates] = useState<Note[]>([])
@@ -104,7 +105,7 @@ export function ConnectionsPanel({ note }: { note: Note }) {
             <li key={connectionId} className="flex items-center gap-2">
               <Cinta category={other.category} />
               <Link
-                to={`/nota/${other.id}`}
+                to={`/vaults/${vaultId}/nota/${other.id}`}
                 className="min-w-0 flex-1 rounded-xs px-1 py-0.5 hover:bg-pizarra"
               >
                 <span className="block truncate font-serif">{other.title}</span>

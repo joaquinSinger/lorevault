@@ -1,5 +1,13 @@
 export const CATEGORIES = ['personaje', 'locacion', 'lore', 'capitulo'] as const
 
+/** Un vault agrupa las notas de un mundo/proyecto; cada usuario puede tener varios. */
+export interface Vault {
+  id: string
+  name: string
+  createdAt: string
+  updatedAt: string
+}
+
 export type Category = (typeof CATEGORIES)[number]
 
 export interface Note {

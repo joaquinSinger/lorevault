@@ -3,11 +3,12 @@ import { Link } from 'react-router'
 import { searchNotesByTitle } from '../lib/storage'
 import type { Note } from '../types'
 import { CATEGORY_LABELS_SINGULAR } from '../lib/categories'
-import { useVault } from '../state/vault-context'
+import { useActiveVaultId, useVault } from '../state/vault-context'
 import { Cinta } from './Cinta'
 
 export function SearchBox() {
   const { revision } = useVault()
+  const vaultId = useActiveVaultId()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Note[]>([])
 
@@ -44,7 +45,7 @@ export function SearchBox() {
             {results.map((note) => (
               <li key={note.id}>
                 <Link
-                  to={`/nota/${note.id}`}
+                  to={`/vaults/${vaultId}/nota/${note.id}`}
                   onClick={() => setQuery('')}
                   className="flex items-center gap-2 rounded-xs px-2 py-1 hover:bg-noche"
                 >

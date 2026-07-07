@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { deleteNote, getNoteById } from '../lib/storage'
 import type { Note } from '../types'
 import { CATEGORY_LABELS_SINGULAR, CATEGORY_TINTA_TEXT } from '../lib/categories'
-import { useVault } from '../state/vault-context'
+import { useActiveVaultId, useVault } from '../state/vault-context'
 import { Button } from '../components/Button'
 import { Cinta } from '../components/Cinta'
 import { ConnectionsPanel } from '../components/ConnectionsPanel'
@@ -20,6 +20,7 @@ interface LookupResult {
 export function NotePage() {
   const { id } = useParams()
   const { revision } = useVault()
+  const vaultId = useActiveVaultId()
   const [result, setResult] = useState<LookupResult | null>(null)
 
   useEffect(() => {
@@ -50,7 +51,10 @@ export function NotePage() {
       <div className="max-w-[65ch]">
         <h1 className="font-serif text-display font-medium">Nota no encontrada</h1>
         <p className="mt-4 text-sepia">Puede que haya sido eliminada del vault.</p>
-        <Link to="/" className="mt-6 inline-block text-musgo hover:underline">
+        <Link
+          to={`/vaults/${vaultId}`}
+          className="mt-6 inline-block text-musgo hover:underline"
+        >
           Volver al vault
         </Link>
       </div>
@@ -64,6 +68,7 @@ type Mode = 'view' | 'edit' | 'confirm-delete'
 
 function NoteView({ note }: { note: Note }) {
   const { invalidate } = useVault()
+  const vaultId = useActiveVaultId()
   const navigate = useNavigate()
   const [mode, setMode] = useState<Mode>('view')
   const [deleting, setDeleting] = useState(false)
@@ -75,7 +80,7 @@ function NoteView({ note }: { note: Note }) {
     setDeleting(true)
     try {
       await deleteNote(note.id)
-      await navigate(`/${note.category}`)
+      await navigate(`/vaults/${vaultId}/${note.category}`)
       invalidate()
     } finally {
       setDeleting(false)

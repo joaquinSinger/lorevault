@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { exportVault, importVault, parseVaultExport } from '../lib/storage'
 import type { VaultExport } from '../types'
-import { useVault } from '../state/vault-context'
+import { useActiveVaultId, useVault } from '../state/vault-context'
 import { Button } from './Button'
 
 interface PendingImport {
@@ -21,6 +21,7 @@ function plural(count: number, singular: string, plural: string): string {
  */
 export function BackupPanel() {
   const { invalidate } = useVault()
+  const vaultId = useActiveVaultId()
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [pending, setPending] = useState<PendingImport | null>(null)
@@ -68,7 +69,7 @@ export function BackupPanel() {
     try {
       await importVault(pending.vault)
       setPending(null)
-      await navigate('/')
+      await navigate(`/vaults/${vaultId}`)
       invalidate()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo importar el backup')

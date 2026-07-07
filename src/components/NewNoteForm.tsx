@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { createNote } from '../lib/storage'
 import type { Category } from '../types'
-import { useVault } from '../state/vault-context'
+import { useActiveVaultId, useVault } from '../state/vault-context'
 import { Button } from './Button'
 
 /**
@@ -12,6 +12,7 @@ import { Button } from './Button'
  */
 export function NewNoteForm({ category }: { category: Category }) {
   const { invalidate } = useVault()
+  const vaultId = useActiveVaultId()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
@@ -33,7 +34,7 @@ export function NewNoteForm({ category }: { category: Category }) {
     setSaving(true)
     try {
       const note = await createNote({ category, title })
-      await navigate(`/nota/${note.id}`)
+      await navigate(`/vaults/${vaultId}/nota/${note.id}`)
       invalidate()
     } finally {
       setSaving(false)

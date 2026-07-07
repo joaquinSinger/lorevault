@@ -41,7 +41,7 @@ export function SignupPage() {
   }
 
   if (session) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/vaults" replace />
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -56,7 +56,7 @@ export function SignupPage() {
       if (needsEmailConfirmation) {
         setAwaitingConfirmation(true)
       } else {
-        await navigate('/', { replace: true })
+        await navigate('/vaults', { replace: true })
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo crear la cuenta.')

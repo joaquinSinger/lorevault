@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router'
 import { getNotesByCategory } from '../lib/storage'
 import type { Category, Note } from '../types'
 import { CATEGORY_LABELS, isCategory } from '../lib/categories'
-import { useVault } from '../state/vault-context'
+import { useActiveVaultId, useVault } from '../state/vault-context'
 import { Cinta } from '../components/Cinta'
 import { NewNoteForm } from '../components/NewNoteForm'
 import { NotFoundPage } from './NotFoundPage'
@@ -38,6 +38,7 @@ const dateFormatter = new Intl.DateTimeFormat('es', {
 
 function CategoryView({ category }: { category: Category }) {
   const { revision } = useVault()
+  const vaultId = useActiveVaultId()
   const [notes, setNotes] = useState<Note[] | null>(null)
 
   useEffect(() => {
@@ -73,7 +74,7 @@ function CategoryView({ category }: { category: Category }) {
             {notes.map((note) => (
               <li key={note.id}>
                 <Link
-                  to={`/nota/${note.id}`}
+                  to={`/vaults/${vaultId}/nota/${note.id}`}
                   className="group flex items-baseline justify-between gap-4 py-3"
                 >
                   <span className="min-w-0 truncate font-serif text-xl group-hover:text-musgo">
