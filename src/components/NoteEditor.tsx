@@ -6,6 +6,7 @@ import { useVault } from '../state/vault-context'
 import { Button } from './Button'
 import { Cinta } from './Cinta'
 import { Markdown } from './Markdown'
+import { NoteTags } from './NoteTags'
 
 /*
  * Guardado híbrido (decisión de la tarea 5): autoguardado con debounce ~1s
@@ -15,7 +16,7 @@ import { Markdown } from './Markdown'
  */
 const AUTOSAVE_DEBOUNCE_MS = 1000
 
-type SaveStatus = 'saved' | 'dirty' | 'saving'
+type SaveStatus = 'saved' | 'dirty' | 'saving' | 'error'
 type Tab = 'escribir' | 'preview'
 
 interface Draft {
@@ -43,30 +44,40 @@ export function NoteEditor({ note, onDone }: { note: Note; onDone: () => void })
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const queueRef = useRef<Promise<void>>(Promise.resolve())
 
-  const flush = useCallback(() => {
+  /** Resuelve `true` solo si al terminar no queda nada sin persistir. */
+  const flush = useCallback((): Promise<boolean> => {
     clearTimeout(timerRef.current)
-    queueRef.current = queueRef.current.then(async () => {
+    const run = queueRef.current.then(async () => {
       const draft = draftRef.current
       const saved = lastSavedRef.current
       if (!draft.title.trim()) {
-        return // título requerido: no persistir hasta que vuelva a tener uno
+        return false // título requerido: no persistir hasta que vuelva a tener uno
       }
       if (draft.title === saved.title && draft.content === saved.content) {
         setStatus('saved')
-        return
+        return true
       }
       setStatus('saving')
-      await updateNote(note.id, { title: draft.title, content: draft.content })
+      try {
+        await updateNote(note.id, { title: draft.title, content: draft.content })
+      } catch {
+        // El borrador sigue en memoria: el próximo flush reintenta (tipeo,
+        // Ctrl+S, "Reintentar" o "Listo").
+        setStatus('error')
+        return false
+      }
       lastSavedRef.current = draft
       invalidate()
       const current = draftRef.current
-      setStatus(
+      const clean =
         current.title === draft.title && current.content === draft.content
-          ? 'saved'
-          : 'dirty',
-      )
+      setStatus(clean ? 'saved' : 'dirty')
+      return clean
     })
-    return queueRef.current
+    // La cola nunca queda rechazada (el error ya se capturó arriba): un
+    // guardado fallido no bloquea los siguientes.
+    queueRef.current = run.then(() => undefined)
+    return run
   }, [note.id, invalidate])
 
   // Si se desmonta con un guardado pendiente (navegación), lo dispara igual.
@@ -92,8 +103,11 @@ export function NoteEditor({ note, onDone }: { note: Note; onDone: () => void })
   }
 
   async function handleDone() {
-    await flush()
-    onDone()
+    // Si el guardado falla, se queda en el editor: salir descartaría el
+    // borrador, que solo existe acá.
+    if (await flush()) {
+      onDone()
+    }
   }
 
   const titleValid = title.trim().length > 0
@@ -101,9 +115,12 @@ export function NoteEditor({ note, onDone }: { note: Note; onDone: () => void })
     ? 'El título es obligatorio'
     : status === 'saving'
       ? 'Guardando…'
-      : status === 'dirty'
-        ? 'Sin guardar'
-        : 'Guardado'
+      : status === 'error'
+        ? 'Error al guardar'
+        : status === 'dirty'
+          ? 'Sin guardar'
+          : 'Guardado'
+  const statusIsError = titleValid && status === 'error'
 
   return (
     <div onKeyDown={handleKeyDown} className="max-w-[65ch]">
@@ -150,8 +167,20 @@ export function NoteEditor({ note, onDone }: { note: Note; onDone: () => void })
             </button>
           ))}
         </div>
-        <p aria-live="polite" className="text-sm text-sepia italic">
+        <p
+          aria-live="polite"
+          className={`text-sm italic ${statusIsError ? 'text-tinta-personaje' : 'text-sepia'}`}
+        >
           {statusText}
+          {statusIsError && (
+            <button
+              type="button"
+              onClick={() => void flush()}
+              className="ml-2 not-italic text-musgo hover:underline"
+            >
+              Reintentar
+            </button>
+          )}
         </p>
       </div>
 
@@ -183,7 +212,11 @@ export function NoteEditor({ note, onDone }: { note: Note; onDone: () => void })
         </div>
       )}
 
-      <div className="mt-4">
+      <div className="mt-6 border-t border-trazo pt-5">
+        <NoteTags note={note} editable />
+      </div>
+
+      <div className="mt-6">
         <Button variant="primary" disabled={!titleValid} onClick={handleDone}>
           Listo
         </Button>

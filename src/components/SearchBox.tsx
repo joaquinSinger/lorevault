@@ -11,15 +11,24 @@ export function SearchBox() {
   const vaultId = useActiveVaultId()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<Note[]>([])
+  const [error, setError] = useState<string | null>(null)
 
   // searchNotesByTitle ya devuelve [] para query vacía o solo espacios.
   useEffect(() => {
     let cancelled = false
-    void searchNotesByTitle(vaultId, query).then((notes) => {
-      if (!cancelled) {
-        setResults(notes)
-      }
-    })
+    searchNotesByTitle(vaultId, query)
+      .then((notes) => {
+        if (!cancelled) {
+          setResults(notes)
+          setError(null)
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setResults([])
+          setError(err instanceof Error ? err.message : 'No se pudo buscar.')
+        }
+      })
     return () => {
       cancelled = true
     }
@@ -40,7 +49,11 @@ export function SearchBox() {
         className="w-full rounded-xs border border-trazo bg-noche px-3 py-1.5 text-sm placeholder:text-sepia"
       />
       {query.trim() &&
-        (results.length > 0 ? (
+        (error ? (
+          <p role="alert" className="mt-2 px-2 text-sm text-tinta-personaje">
+            {error}
+          </p>
+        ) : results.length > 0 ? (
           <ul className="mt-2 space-y-1">
             {results.map((note) => (
               <li key={note.id}>

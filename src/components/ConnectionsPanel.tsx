@@ -11,6 +11,7 @@ import type { Note } from '../types'
 import { CATEGORY_LABELS_SINGULAR } from '../lib/categories'
 import { useActiveVaultId, useVault } from '../state/vault-context'
 import { Cinta } from './Cinta'
+import { LoadError } from './LoadError'
 
 /** Conexión resuelta al otro extremo, lista para renderizar. */
 interface ConnectedNote {
@@ -27,45 +28,68 @@ export function ConnectionsPanel({ note }: { note: Note }) {
   const { revision, invalidate } = useVault()
   const vaultId = useActiveVaultId()
   const [connected, setConnected] = useState<ConnectedNote[] | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [attempt, setAttempt] = useState(0)
   const [query, setQuery] = useState('')
   const [candidates, setCandidates] = useState<Note[]>([])
+  const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
     void (async () => {
-      const connections = await getConnectionsByNoteId(note.id)
-      const resolved = await Promise.all(
-        connections.map(async (connection) => {
-          const otherId =
-            connection.sourceNoteId === note.id
-              ? connection.targetNoteId
-              : connection.sourceNoteId
-          const other = await getNoteById(otherId)
-          return other ? { connectionId: connection.id, note: other } : null
-        }),
-      )
-      if (!cancelled) {
-        setConnected(
-          resolved
-            .filter((item): item is ConnectedNote => item !== null)
-            .sort((a, b) => a.note.title.localeCompare(b.note.title, 'es')),
+      try {
+        const connections = await getConnectionsByNoteId(note.id)
+        const resolved = await Promise.all(
+          connections.map(async (connection) => {
+            const otherId =
+              connection.sourceNoteId === note.id
+                ? connection.targetNoteId
+                : connection.sourceNoteId
+            const other = await getNoteById(otherId)
+            return other ? { connectionId: connection.id, note: other } : null
+          }),
         )
+        if (!cancelled) {
+          setConnected(
+            resolved
+              .filter((item): item is ConnectedNote => item !== null)
+              .sort((a, b) => a.note.title.localeCompare(b.note.title, 'es')),
+          )
+          setLoadError(null)
+        }
+      } catch (err) {
+        // Solo se muestra si todavía no hay lista (ver render): si falló un
+        // refetch por `revision`, se conserva la lista ya cargada.
+        if (!cancelled) {
+          setLoadError(
+            err instanceof Error
+              ? err.message
+              : 'No se pudieron cargar las conexiones.',
+          )
+        }
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [note.id, revision])
+  }, [note.id, revision, attempt])
 
   // searchNotesByTitle ya devuelve [] para query vacía o solo espacios.
   useEffect(() => {
     let cancelled = false
-    void searchNotesByTitle(vaultId, query).then((notes) => {
-      if (!cancelled) {
-        setCandidates(notes)
-      }
-    })
+    searchNotesByTitle(vaultId, query)
+      .then((notes) => {
+        if (!cancelled) {
+          setCandidates(notes)
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setCandidates([])
+          setError(err instanceof Error ? err.message : 'No se pudo buscar')
+        }
+      })
     return () => {
       cancelled = true
     }
@@ -77,19 +101,36 @@ export function ConnectionsPanel({ note }: { note: Note }) {
   )
 
   async function handleConnect(targetNoteId: string) {
+    if (busy) {
+      return
+    }
+    setBusy(true)
+    setError(null)
     try {
       await createConnection(vaultId, note.id, targetNoteId)
       setQuery('')
-      setError(null)
       invalidate()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudo crear la conexión')
+    } finally {
+      setBusy(false)
     }
   }
 
   async function handleRemove(connectionId: string) {
-    await deleteConnection(connectionId)
-    invalidate()
+    if (busy) {
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      await deleteConnection(connectionId)
+      invalidate()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'No se pudo quitar la conexión')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
@@ -99,7 +140,19 @@ export function ConnectionsPanel({ note }: { note: Note }) {
     >
       <h2 className="text-label uppercase text-sepia">Conexiones</h2>
 
-      {connected === null ? null : connected.length > 0 ? (
+      {connected === null && loadError ? (
+        <div className="mt-3">
+          <LoadError
+            message={loadError}
+            onRetry={() => {
+              setLoadError(null)
+              setAttempt((n) => n + 1)
+            }}
+          />
+        </div>
+      ) : connected === null ? (
+        <p className="mt-3 text-sm text-sepia">Cargando…</p>
+      ) : connected.length > 0 ? (
         <ul className="mt-3 space-y-2">
           {connected.map(({ connectionId, note: other }) => (
             <li key={connectionId} className="flex items-center gap-2">
@@ -117,8 +170,9 @@ export function ConnectionsPanel({ note }: { note: Note }) {
                 type="button"
                 aria-label={`Quitar conexión con «${other.title}»`}
                 title="Quitar conexión"
+                disabled={busy}
                 onClick={() => void handleRemove(connectionId)}
-                className="shrink-0 rounded-xs px-1.5 text-sepia hover:text-pergamino"
+                className="shrink-0 rounded-xs px-1.5 text-sepia hover:text-pergamino disabled:opacity-60"
               >
                 ×
               </button>
@@ -157,8 +211,9 @@ export function ConnectionsPanel({ note }: { note: Note }) {
                 <li key={candidate.id}>
                   <button
                     type="button"
+                    disabled={busy}
                     onClick={() => void handleConnect(candidate.id)}
-                    className="flex w-full items-center gap-2 rounded-xs px-2 py-1 text-left hover:bg-pizarra"
+                    className="flex w-full items-center gap-2 rounded-xs px-2 py-1 text-left hover:bg-pizarra disabled:opacity-60"
                   >
                     <Cinta category={candidate.category} />
                     <span className="min-w-0">

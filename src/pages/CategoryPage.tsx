@@ -5,6 +5,7 @@ import type { Category, Note } from '../types'
 import { CATEGORY_LABELS, isCategory } from '../lib/categories'
 import { useActiveVaultId, useVault } from '../state/vault-context'
 import { Cinta } from '../components/Cinta'
+import { LoadError } from '../components/LoadError'
 import { NewNoteForm } from '../components/NewNoteForm'
 import { NotFoundPage } from './NotFoundPage'
 
@@ -40,18 +41,29 @@ function CategoryView({ category }: { category: Category }) {
   const { revision } = useVault()
   const vaultId = useActiveVaultId()
   const [notes, setNotes] = useState<Note[] | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     let cancelled = false
-    void getNotesByCategory(vaultId, category).then((list) => {
-      if (!cancelled) {
-        setNotes(sortNotes(category, list))
-      }
-    })
+    getNotesByCategory(vaultId, category)
+      .then((list) => {
+        if (!cancelled) {
+          setNotes(sortNotes(category, list))
+          setLoadError(null)
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setLoadError(
+            err instanceof Error ? err.message : 'No se pudieron cargar las notas.',
+          )
+        }
+      })
     return () => {
       cancelled = true
     }
-  }, [vaultId, category, revision])
+  }, [vaultId, category, revision, attempt])
 
   return (
     <div className="max-w-[65ch]">
@@ -66,28 +78,39 @@ function CategoryView({ category }: { category: Category }) {
         <NewNoteForm category={category} />
       </div>
 
-      {notes !== null &&
-        (notes.length === 0 ? (
-          <p className="mt-8 text-sepia">Todavía no hay notas en esta categoría.</p>
-        ) : (
-          <ul className="mt-6 divide-y divide-trazo border-t border-trazo">
-            {notes.map((note) => (
-              <li key={note.id}>
-                <Link
-                  to={`/vaults/${vaultId}/nota/${note.id}`}
-                  className="group flex items-baseline justify-between gap-4 py-3"
-                >
-                  <span className="min-w-0 truncate font-serif text-xl group-hover:text-musgo">
-                    {note.title}
-                  </span>
-                  <span className="shrink-0 text-sm text-sepia">
-                    {dateFormatter.format(new Date(note.updatedAt))}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ))}
+      {loadError ? (
+        <div className="mt-8">
+          <LoadError
+            message={loadError}
+            onRetry={() => {
+              setLoadError(null)
+              setAttempt((n) => n + 1)
+            }}
+          />
+        </div>
+      ) : notes === null ? (
+        <p className="mt-8 text-sm text-sepia">Cargando…</p>
+      ) : notes.length === 0 ? (
+        <p className="mt-8 text-sepia">Todavía no hay notas en esta categoría.</p>
+      ) : (
+        <ul className="mt-6 divide-y divide-trazo border-t border-trazo">
+          {notes.map((note) => (
+            <li key={note.id}>
+              <Link
+                to={`/vaults/${vaultId}/nota/${note.id}`}
+                className="group flex items-baseline justify-between gap-4 py-3"
+              >
+                <span className="min-w-0 truncate font-serif text-xl group-hover:text-musgo">
+                  {note.title}
+                </span>
+                <span className="shrink-0 text-sm text-sepia">
+                  {dateFormatter.format(new Date(note.updatedAt))}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

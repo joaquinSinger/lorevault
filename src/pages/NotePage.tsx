@@ -8,42 +8,76 @@ import { Button } from '../components/Button'
 import { Cinta } from '../components/Cinta'
 import { ConnectionsPanel } from '../components/ConnectionsPanel'
 import { Markdown } from '../components/Markdown'
+import { LoadError } from '../components/LoadError'
 import { NoteEditor } from '../components/NoteEditor'
+import { NoteTags } from '../components/NoteTags'
 import { NotFoundPage } from './NotFoundPage'
 
-/** `key` guarda el id consultado para distinguir "cargando" de "no existe". */
-interface LookupResult {
-  key: string
-  note: Note | null
-}
+/** `key` guarda el id consultado para distinguir "cargando" de "no existe" o "falló". */
+type LookupResult =
+  | { key: string; status: 'loaded'; note: Note | null }
+  | { key: string; status: 'error'; message: string }
 
 export function NotePage() {
   const { id } = useParams()
   const { revision } = useVault()
   const vaultId = useActiveVaultId()
   const [result, setResult] = useState<LookupResult | null>(null)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     if (!id) {
       return
     }
     let cancelled = false
-    void getNoteById(id).then((note) => {
-      if (!cancelled) {
-        setResult({ key: id, note: note ?? null })
-      }
-    })
+    getNoteById(id)
+      .then((note) => {
+        if (!cancelled) {
+          setResult({ key: id, status: 'loaded', note: note ?? null })
+        }
+      })
+      .catch((err: unknown) => {
+        if (cancelled) {
+          return
+        }
+        // Si la nota ya está en pantalla y falló un refetch (por `revision`),
+        // se conserva lo cargado en vez de desmontar el lector/editor.
+        setResult((prev) =>
+          prev?.key === id && prev.status === 'loaded'
+            ? prev
+            : {
+                key: id,
+                status: 'error',
+                message:
+                  err instanceof Error ? err.message : 'No se pudo cargar la nota.',
+              },
+        )
+      })
     return () => {
       cancelled = true
     }
-  }, [id, revision])
+  }, [id, revision, attempt])
 
   if (!id) {
     return <NotFoundPage />
   }
 
   if (!result || result.key !== id) {
-    return null // cargando
+    return <p className="text-sm text-sepia">Cargando…</p>
+  }
+
+  if (result.status === 'error') {
+    return (
+      <div className="max-w-[65ch]">
+        <LoadError
+          message={result.message}
+          onRetry={() => {
+            setResult(null)
+            setAttempt((n) => n + 1)
+          }}
+        />
+      </div>
+    )
   }
 
   if (!result.note) {
@@ -72,17 +106,23 @@ function NoteView({ note }: { note: Note }) {
   const navigate = useNavigate()
   const [mode, setMode] = useState<Mode>('view')
   const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   async function handleDelete() {
     if (deleting) {
       return
     }
     setDeleting(true)
+    setDeleteError(null)
     try {
       await deleteNote(note.id)
       await navigate(`/vaults/${vaultId}/${note.category}`)
       invalidate()
-    } finally {
+    } catch (err) {
+      // En éxito la navegación desmonta la página: solo se reactiva en error.
+      setDeleteError(
+        err instanceof Error ? err.message : 'No se pudo eliminar la nota.',
+      )
       setDeleting(false)
     }
   }
@@ -99,9 +139,13 @@ function NoteView({ note }: { note: Note }) {
             note={note}
             mode={mode}
             deleting={deleting}
+            deleteError={deleteError}
             onEdit={() => setMode('edit')}
             onAskDelete={() => setMode('confirm-delete')}
-            onCancelDelete={() => setMode('view')}
+            onCancelDelete={() => {
+              setMode('view')
+              setDeleteError(null)
+            }}
             onDelete={handleDelete}
           />
         )}
@@ -115,6 +159,7 @@ function NoteReader({
   note,
   mode,
   deleting,
+  deleteError,
   onEdit,
   onAskDelete,
   onCancelDelete,
@@ -123,6 +168,7 @@ function NoteReader({
   note: Note
   mode: Mode
   deleting: boolean
+  deleteError: string | null
   onEdit: () => void
   onAskDelete: () => void
   onCancelDelete: () => void
@@ -148,6 +194,8 @@ function NoteReader({
         </div>
       </header>
 
+      <NoteTags note={note} />
+
       {mode === 'confirm-delete' && (
         <div className="mt-6 rounded-xs border border-trazo bg-pizarra p-4">
           <p className="font-medium">¿Eliminar «{note.title}»?</p>
@@ -157,10 +205,17 @@ function NoteReader({
           </p>
           <div className="mt-4 flex gap-2">
             <Button variant="primary" disabled={deleting} onClick={onDelete}>
-              Eliminar definitivamente
+              {deleting ? 'Eliminando…' : 'Eliminar definitivamente'}
             </Button>
-            <Button onClick={onCancelDelete}>Cancelar</Button>
+            <Button disabled={deleting} onClick={onCancelDelete}>
+              Cancelar
+            </Button>
           </div>
+          {deleteError && (
+            <p role="alert" className="mt-3 text-sm text-tinta-personaje">
+              {deleteError}
+            </p>
+          )}
         </div>
       )}
 
