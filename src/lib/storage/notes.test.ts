@@ -59,7 +59,7 @@ function mockQuery(result: SupabaseResult): MockBuilder {
 
 const ISO_8601 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/
 
-const NOTE_COLUMNS = 'id, type, title, content, created_at, updated_at'
+const NOTE_COLUMNS = 'id, type, title, content, sort_order, created_at, updated_at'
 
 const VAULT_ID = 'e5e9b1de-0000-4000-8000-00000000000a'
 
@@ -68,6 +68,7 @@ const ROW = {
   type: 'character',
   title: 'Kaelen',
   content: 'Mago',
+  sort_order: null,
   created_at: '2026-07-01T10:00:00.000Z',
   updated_at: '2026-07-02T12:30:00.000Z',
 }
@@ -108,6 +109,7 @@ describe('createNote', () => {
       type: 'character',
       title: 'Kaelen',
       content: 'Mago',
+      sort_order: null,
     })
     expect(builder.select).toHaveBeenCalledWith(NOTE_COLUMNS)
     expect(builder.single).toHaveBeenCalled()
@@ -134,6 +136,19 @@ describe('createNote', () => {
     const inserted = builder.insert.mock.calls[0][0] as Record<string, unknown>
     expect(inserted).not.toHaveProperty('id')
     expect(inserted.content).toBe('')
+  })
+
+  it('persiste el orden manual cuando viene en el input (capítulos)', async () => {
+    const builder = mockQuery({ data: { ...ROW, type: 'chapter', sort_order: 3 } })
+    const note = await createNote({
+      vaultId: VAULT_ID,
+      category: 'capitulo',
+      title: 'Capítulo III',
+      order: 3,
+    })
+    const inserted = builder.insert.mock.calls[0][0] as Record<string, unknown>
+    expect(inserted.sort_order).toBe(3)
+    expect(note.order).toBe(3)
   })
 
   it('rechaza título vacío o solo espacios sin tocar la red', async () => {
@@ -167,6 +182,13 @@ describe('getNoteById', () => {
     await expect(getNoteById('otro-id')).resolves.toBeUndefined()
   })
 
+  it('mapea sort_order de la fila a Note.order', async () => {
+    mockQuery({ data: { ...ROW, type: 'chapter', sort_order: 7 } })
+    const note = await getNoteById(ROW.id)
+    expect(note?.order).toBe(7)
+    expect(note?.category).toBe('capitulo')
+  })
+
   it('lanza un error amigable si Supabase falla', async () => {
     mockQuery({ error: DB_ERROR })
     await expect(getNoteById(ROW.id)).rejects.toThrow('Revisá tu conexión')
@@ -185,6 +207,21 @@ describe('getNotesByCategory', () => {
   it('devuelve [] cuando la categoría no tiene notas', async () => {
     mockQuery({ data: [] })
     await expect(getNotesByCategory(VAULT_ID, 'capitulo')).resolves.toEqual([])
+  })
+
+  it('capítulos: ordena por sort_order con null al final, creación como desempate', async () => {
+    const builder = mockQuery({ data: [] })
+    await getNotesByCategory(VAULT_ID, 'capitulo')
+    expect(builder.order.mock.calls).toEqual([
+      ['sort_order', { ascending: true, nullsFirst: false }],
+      ['created_at', { ascending: true }],
+    ])
+  })
+
+  it('las demás categorías no ordenan por sort_order', async () => {
+    const builder = mockQuery({ data: [ROW] })
+    await getNotesByCategory(VAULT_ID, 'personaje')
+    expect(builder.order.mock.calls).toEqual([['created_at', { ascending: true }]])
   })
 
   it('lanza un error amigable si Supabase falla', async () => {
@@ -212,7 +249,24 @@ describe('updateNote', () => {
     await updateNote(ROW.id, { content: 'Solo contenido' })
     const patch = builder.update.mock.calls[0][0] as Record<string, unknown>
     expect(patch).not.toHaveProperty('title')
+    expect(patch).not.toHaveProperty('sort_order')
     expect(patch.content).toBe('Solo contenido')
+  })
+
+  it('actualiza el orden manual mapeándolo a sort_order', async () => {
+    const builder = mockQuery({ data: { ...ROW, type: 'chapter', sort_order: 2 } })
+    const note = await updateNote(ROW.id, { order: 2 })
+    const patch = builder.update.mock.calls[0][0] as Record<string, unknown>
+    expect(patch.sort_order).toBe(2)
+    expect(note.order).toBe(2)
+  })
+
+  it('order: null limpia el orden (el capítulo vuelve al final)', async () => {
+    const builder = mockQuery({ data: { ...ROW, type: 'chapter' } })
+    const note = await updateNote(ROW.id, { order: null })
+    const patch = builder.update.mock.calls[0][0] as Record<string, unknown>
+    expect(patch.sort_order).toBeNull()
+    expect(note.order).toBeNull()
   })
 
   it('rechaza título vacío sin tocar la red', async () => {

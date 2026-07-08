@@ -22,6 +22,13 @@ type Tab = 'escribir' | 'preview'
 interface Draft {
   title: string
   content: string
+  order: number | null
+}
+
+/** Campo vacío (o no numérico) = sin orden asignado; el capítulo va al final. */
+function parseOrder(value: string): number | null {
+  const n = Number.parseInt(value, 10)
+  return Number.isNaN(n) ? null : n
 }
 
 const TAB_LABELS: Record<Tab, string> = {
@@ -33,14 +40,24 @@ export function NoteEditor({ note, onDone }: { note: Note; onDone: () => void })
   const { invalidate } = useVault()
   const [title, setTitle] = useState(note.title)
   const [content, setContent] = useState(note.content)
+  // El input maneja el texto crudo; al dominio (`Draft.order`) va parseado.
+  const [orderText, setOrderText] = useState(note.order === null ? '' : String(note.order))
   const [tab, setTab] = useState<Tab>('escribir')
   const [status, setStatus] = useState<SaveStatus>('saved')
 
   // Refs para que flush lea siempre el borrador vigente sin cerrar sobre
   // estado viejo, y para serializar escrituras si se encadenan guardados.
   // draftRef se actualiza en los handlers de cambio, junto con el estado.
-  const draftRef = useRef<Draft>({ title: note.title, content: note.content })
-  const lastSavedRef = useRef<Draft>({ title: note.title, content: note.content })
+  const draftRef = useRef<Draft>({
+    title: note.title,
+    content: note.content,
+    order: note.order,
+  })
+  const lastSavedRef = useRef<Draft>({
+    title: note.title,
+    content: note.content,
+    order: note.order,
+  })
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const queueRef = useRef<Promise<void>>(Promise.resolve())
 
@@ -53,13 +70,21 @@ export function NoteEditor({ note, onDone }: { note: Note; onDone: () => void })
       if (!draft.title.trim()) {
         return false // título requerido: no persistir hasta que vuelva a tener uno
       }
-      if (draft.title === saved.title && draft.content === saved.content) {
+      if (
+        draft.title === saved.title &&
+        draft.content === saved.content &&
+        draft.order === saved.order
+      ) {
         setStatus('saved')
         return true
       }
       setStatus('saving')
       try {
-        await updateNote(note.id, { title: draft.title, content: draft.content })
+        await updateNote(note.id, {
+          title: draft.title,
+          content: draft.content,
+          order: draft.order,
+        })
       } catch {
         // El borrador sigue en memoria: el próximo flush reintenta (tipeo,
         // Ctrl+S, "Reintentar" o "Listo").
@@ -70,7 +95,9 @@ export function NoteEditor({ note, onDone }: { note: Note; onDone: () => void })
       invalidate()
       const current = draftRef.current
       const clean =
-        current.title === draft.title && current.content === draft.content
+        current.title === draft.title &&
+        current.content === draft.content &&
+        current.order === draft.order
       setStatus(clean ? 'saved' : 'dirty')
       return clean
     })
@@ -145,6 +172,33 @@ export function NoteEditor({ note, onDone }: { note: Note; onDone: () => void })
             }}
             className="mt-1 w-full rounded-xs border border-trazo bg-noche px-3 py-1.5 font-serif text-title font-medium"
           />
+          {note.category === 'capitulo' && (
+            <div className="mt-3 flex items-center gap-3">
+              <label htmlFor="orden-nota" className="text-label uppercase text-sepia">
+                Orden
+              </label>
+              <input
+                id="orden-nota"
+                type="number"
+                inputMode="numeric"
+                step={1}
+                placeholder="—"
+                value={orderText}
+                onChange={(e) => {
+                  setOrderText(e.target.value)
+                  draftRef.current = {
+                    ...draftRef.current,
+                    order: parseOrder(e.target.value),
+                  }
+                  markDirty()
+                }}
+                className="w-20 rounded-xs border border-trazo bg-noche px-3 py-1.5 text-sm placeholder:text-sepia"
+              />
+              <span className="text-sm text-sepia">
+                Sin orden, el capítulo va al final.
+              </span>
+            </div>
+          )}
         </div>
       </header>
 

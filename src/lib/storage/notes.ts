@@ -16,11 +16,12 @@ interface NoteRow {
   type: string
   title: string
   content: string
+  sort_order: number | null
   created_at: string
   updated_at: string
 }
 
-const NOTE_COLUMNS = 'id, type, title, content, created_at, updated_at'
+const NOTE_COLUMNS = 'id, type, title, content, sort_order, created_at, updated_at'
 
 /** La columna `type` guarda la categoría en inglés (check del schema); el dominio sigue en español. */
 const TYPE_BY_CATEGORY: Record<Category, string> = {
@@ -40,9 +41,9 @@ function toNote(row: NoteRow): Note {
     category: CATEGORY_BY_TYPE[row.type],
     title: row.title,
     content: row.content,
-    // El schema de Etapa 2 no tiene columna de orden (spec.md §3): el campo
-    // sigue en el dominio para el listado de capítulos, siempre null por ahora.
-    order: null,
+    // `sort_order` en Postgres porque `order` es palabra reservada de SQL;
+    // el dominio conserva el nombre de Etapa 1 (spec.md §3).
+    order: row.sort_order,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -53,10 +54,12 @@ export interface CreateNoteInput {
   category: Category
   title: string
   content?: string
+  /** Orden manual, solo con sentido para capítulos; null u omitido = sin orden. */
+  order?: number | null
 }
 
 /** `id`, `category`, `vaultId` y `createdAt` son inmutables tras la creación. */
-export type UpdateNoteInput = Partial<Pick<Note, 'title' | 'content'>>
+export type UpdateNoteInput = Partial<Pick<Note, 'title' | 'content' | 'order'>>
 
 export async function createNote(input: CreateNoteInput): Promise<Note> {
   const title = input.title.trim()
@@ -70,6 +73,7 @@ export async function createNote(input: CreateNoteInput): Promise<Note> {
       type: TYPE_BY_CATEGORY[input.category],
       title,
       content: input.content ?? '',
+      sort_order: input.order ?? null,
     })
     .select(NOTE_COLUMNS)
     .single()
@@ -96,12 +100,17 @@ export async function getNotesByCategory(
   vaultId: string,
   category: Category,
 ): Promise<Note[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from('notes')
     .select(NOTE_COLUMNS)
     .eq('vault_id', vaultId)
     .eq('type', TYPE_BY_CATEGORY[category])
-    .order('created_at', { ascending: true })
+  // Capítulos: orden manual primero (sin orden asignado al final), fecha de
+  // creación como desempate (spec.md §6). Las demás categorías, por creación.
+  if (category === 'capitulo') {
+    query = query.order('sort_order', { ascending: true, nullsFirst: false })
+  }
+  const { data, error } = await query.order('created_at', { ascending: true })
   if (error) {
     throw new Error(GENERIC_MESSAGE)
   }
@@ -113,7 +122,7 @@ export async function updateNote(id: string, changes: UpdateNoteInput): Promise<
     throw new Error('El título es requerido')
   }
   // No hay trigger de updated_at en el schema: lo refresca el cliente.
-  const patch: Record<string, string> = {
+  const patch: Record<string, string | number | null> = {
     updated_at: new Date().toISOString(),
   }
   if (changes.title !== undefined) {
@@ -121,6 +130,9 @@ export async function updateNote(id: string, changes: UpdateNoteInput): Promise<
   }
   if (changes.content !== undefined) {
     patch.content = changes.content
+  }
+  if (changes.order !== undefined) {
+    patch.sort_order = changes.order
   }
   const { data, error } = await supabase
     .from('notes')

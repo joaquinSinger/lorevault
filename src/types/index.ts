@@ -16,10 +16,10 @@ export interface Note {
   title: string
   content: string
   /**
-   * Posición del capítulo en la historia; null para las demás categorías.
-   * El schema de Etapa 2 no tiene columna que la persista (spec.md §3), así
-   * que desde Supabase llega siempre null; se conserva por el listado de
-   * capítulos.
+   * Posición del capítulo en la historia; null = sin orden asignado (va al
+   * final del listado) y null siempre para las demás categorías. Persiste en
+   * la columna `sort_order` de Postgres (spec.md §3) — el mapeo de nombre es
+   * responsabilidad de notes.ts.
    */
   order: number | null
   createdAt: string
