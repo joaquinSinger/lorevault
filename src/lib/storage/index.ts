@@ -20,3 +20,12 @@ export {
   type UpdateNoteInput,
 } from './notes'
 export { createConnection, getConnectionsByNoteId, deleteConnection } from './connections'
+export {
+  getTagsByVaultId,
+  createTag,
+  renameTag,
+  deleteTag,
+  getTagsByNoteId,
+  addTagToNote,
+  removeTagFromNote,
+} from './tags'

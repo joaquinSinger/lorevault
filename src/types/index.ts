@@ -26,6 +26,17 @@ export interface Note {
   updatedAt: string
 }
 
+/**
+ * Tag personalizado, scopeado por vault (unique_tag_per_vault). La columna
+ * `color` existe en la tabla pero no se consume en Etapa 2 (reservada para el
+ * grafo de Etapa 3), por eso no aparece en el dominio todavía.
+ */
+export interface Tag {
+  id: string
+  name: string
+  createdAt: string
+}
+
 /** No dirigida: source/target no implican jerarquía ni sentido. */
 export interface Connection {
   id: string
